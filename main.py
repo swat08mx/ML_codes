@@ -219,17 +219,17 @@ print(df_sv)
 
 lists_xg = df_xg.columns
 for items in lists_xg:
-    print(f" Mean of XGBoost {items}: {df_xg[items].mean(axis=0)}")
-    print(f" Std dev of XGBoost {items}: {df_xg[items].std(axis=0)}")
+    print(f" Mean of XGBoost {items}: {"{:.2f}".format(df_xg[items].mean(axis=0))}")
+    print(f" Std dev of XGBoost {items}: {"{:.2f}".format(df_xg[items].std(axis=0))}")
 lists_lr = df_lr.columns
 for items in lists_lr:
-    print(f" Mean of Logistic Regression {items}: {df_lr[items].mean(axis=0)}")
-    print(f" Std dev of Logistic Regression {items}: {df_lr[items].std(axis=0)}")
+    print(f" Mean of Logistic Regression {items}: {"{:.2f}".format(df_lr[items].mean(axis=0))}")
+    print(f" Std dev of Logistic Regression {items}: {"{:.2f}".format(df_lr[items].std(axis=0))}")
 lists_rf = df_rf.columns
 for items in lists_rf:
-    print(f" Mean of Random Forest {items}: {df_rf[items].mean(axis=0)}")
-    print(f" Std dev of Random Forest {items}: {df_rf[items].std(axis=0)}")
+    print(f" Mean of Random Forest {items}: {"{:.2f}".format(df_rf[items].mean(axis=0))}")
+    print(f" Std dev of Random Forest {items}: {"{:.2f}".format(df_rf[items].std(axis=0))}")
 lists_sv = df_sv.columns
 for items in lists_sv:
-    print(f" Mean of Support Vector Machine {items}: {df_sv[items].mean(axis=0)}")
-    print(f" Std dev of Support Vector Machine {items}: {df_sv[items].std(axis=0)}")
+    print(f" Mean of Support Vector Machine {items}: {"{:.2f}".format(df_sv[items].mean(axis=0))}")
+    print(f" Std dev of Support Vector Machine {items}: {"{:.2f}".format(df_sv[items].std(axis=0))}")
