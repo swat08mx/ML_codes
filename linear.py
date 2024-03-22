@@ -13,7 +13,9 @@ if torch.cuda.is_available():
     device = "cuda:0"
 else:
     device = "cpu"
-data1 = pd.read_csv("/content/drive/MyDrive/final_data.csv")
+data1 = pd.read_csv("final_data.csv")
+# data1=data1.iloc[:, :5000]
+print(data1)
 temp = []
 for i in range(len(data1['A/C'])):
     if data1['A/C'][i] == 'A':
@@ -24,6 +26,29 @@ data1.drop('A/C', axis=1, inplace=True)
 data1.drop('Sample_ID', axis=1, inplace=True)
 # temp = pd.DataFrame(temp, columns=['labels'])
 final=data1
+
+# new=[]
+# neu=[]
+# for i in range(len(data1['A/C'])):
+#     if data1['A/C'][i] == 'A':
+#         new.append(i)
+#     else:
+#         neu.append(i)
+# #print(f"The A is {len(new)} and C is {len(neu)}")
+# temp = neu[:200]
+# df = data1.iloc[new]
+# df1 = data1.iloc[temp]
+# final = pd.concat([df,df1], ignore_index=False)
+# labels_two = final['A/C'].to_list()
+# temp=[]
+# for i in range(len(labels_two)):
+#     if labels_two[i] == 'A':
+#         temp.append(1)
+#     else:
+#         temp.append(0)
+# #temp = pd.DataFrame(temp, columns=['labels'])
+# final.drop('A/C', axis=1, inplace=True)
+# final.drop('Sample_ID', axis=1, inplace=True)
 
 X_train, X_test, y_train, y_test = train_test_split(final, temp, test_size=0.3, shuffle=True)
 sc = StandardScaler()
@@ -72,7 +97,7 @@ class Network(nn.Module):
             nn.ReLU(),
             nn.Linear(8, 4),
             nn.ReLU(),
-            nn.Linear(4, 2)
+            nn.Linear(4, 2),
         )
 
     def forward(self, x):
@@ -84,8 +109,8 @@ model = Network()
 model.to(device)
 
 loss_val=[]
-epochs = 25
-optimizer = optim.AdamW(params=model.parameters(), lr=0.03)
+epochs = 20
+optimizer = optim.Adam(params=model.parameters(), lr=0.001)
 loss_fn = nn.CrossEntropyLoss()
 model.train()
 for i in range(epochs):
@@ -93,7 +118,6 @@ for i in range(epochs):
         batch = tuple(t.to(device) for t in data)
         values, labels = batch
         output = model(values.float())
-        print(f"Output:{output}")
         print(f"Output_maxed:{torch.argmax(output, dim=1)}")
         loss = loss_fn(output, labels)
         loss.backward()
@@ -106,13 +130,19 @@ for i in range(epochs):
 model.eval()
 correct = 0
 total = 0
+pred=[]
+label=[]
 for data in tqdm(test_loader):
     batch = tuple(t.to(device) for t in data)
     values, labels = batch
     output = model(values.float())
     predicted = torch.argmax(output, dim=1)
-    total += 1
-    if predicted == labels:
-      correct+=1
+    print(output)
+    pred.append(predicted)
+    label.append(labels)
+    total += labels.size(0)
+    correct += (predicted == labels).sum().item()
+
 accuracy = (correct/total)*100
 print(f"\nTest Accuracy: {format(accuracy, '.4f')}%\n")
+
