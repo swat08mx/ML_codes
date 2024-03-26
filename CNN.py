@@ -6,48 +6,26 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 from torch import nn
+import torch.nn.functional as F
 import pandas as pd
 
 if torch.cuda.is_available():
     device = "cuda:0"
 else:
     device = "cpu"
-data1 = pd.read_csv("final_data.csv")
-# data1=data1.iloc[:, :5000]
-print(data1)
+
+data = pd.read_csv("/content/drive/MyDrive/final_data.csv")
+# data=data.iloc[:, :5000]
 temp = []
-for i in range(len(data1['A/C'])):
-    if data1['A/C'][i] == 'A':
+for i in range(len(data['A/C'])):
+    if data['A/C'][i] == 'A':
         temp.append(1)
     else:
         temp.append(0)
-data1.drop('A/C', axis=1, inplace=True)
-data1.drop('Sample_ID', axis=1, inplace=True)
+data.drop('A/C', axis=1, inplace=True)
+data.drop('Sample_ID', axis=1, inplace=True)
 # temp = pd.DataFrame(temp, columns=['labels'])
-final=data1
-
-# new=[]
-# neu=[]
-# for i in range(len(data1['A/C'])):
-#     if data1['A/C'][i] == 'A':
-#         new.append(i)
-#     else:
-#         neu.append(i)
-# #print(f"The A is {len(new)} and C is {len(neu)}")
-# temp = neu[:200]
-# df = data1.iloc[new]
-# df1 = data1.iloc[temp]
-# final = pd.concat([df,df1], ignore_index=False)
-# labels_two = final['A/C'].to_list()
-# temp=[]
-# for i in range(len(labels_two)):
-#     if labels_two[i] == 'A':
-#         temp.append(1)
-#     else:
-#         temp.append(0)
-# #temp = pd.DataFrame(temp, columns=['labels'])
-# final.drop('A/C', axis=1, inplace=True)
-# final.drop('Sample_ID', axis=1, inplace=True)
+final=data
 
 X_train, X_test, y_train, y_test = train_test_split(final, temp, test_size=0.3, shuffle=True)
 sc = StandardScaler()
@@ -61,51 +39,37 @@ y_test_tensor = torch.tensor(y_test)
 train_set = TensorDataset(X_train_tensor, y_train_tensor)
 test_set = TensorDataset(X_test_tensor, y_test_tensor)
 
-train_loader = DataLoader(train_set, batch_size=32)
+train_loader = DataLoader(train_set, batch_size=16)
 test_loader = DataLoader(test_set, batch_size=1)
 
-class Network(nn.Module):
+
+# Define the CNN architecture
+class CNN(nn.Module):
     def __init__(self):
-        super().__init__()
-        self.layer_stack = nn.Sequential(
-            nn.Linear(18836, 15000),
-            nn.ReLU(),
-            nn.Linear(15000, 12000),
-            nn.ReLU(),
-            nn.Linear(12000, 9000),
-            nn.ReLU(),
-            nn.Linear(9000, 6000),
-            nn.ReLU(),
-            nn.Linear(6000, 3000),
-            nn.ReLU(),
-            nn.Linear(3000, 1000),
-            nn.ReLU(),
-            nn.Linear(1000, 512),
-            nn.ReLU(),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Linear(256, 128),
-            nn.ReLU(),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, 16),
-            nn.ReLU(),
-            nn.Linear(16, 8),
-            nn.ReLU(),
-            nn.Linear(8, 4),
-            nn.ReLU(),
-            nn.Linear(4, 2),
-        )
+        super(CNN, self).__init__()
+        self.conv1 = nn.Conv1d(1, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv1d(32, 64, kernel_size=3, padding=1)
+        self.pool = nn.MaxPool1d(2)
+        self.fc1 = nn.Linear(4709 * 4709, 128)
+        self.fc2 = nn.Linear(128, 64)
+        self.fc3 = nn.Linear(64, 2)  # Assuming binary classification
 
     def forward(self, x):
-        out = self.layer_stack(x)
-        return out
+        x = x.unsqueeze(1)  # Add channel dimension
+        print(x.shape)
+        x = F.relu(self.conv1(x))
+        x = self.pool(x)
+        x = F.relu(self.conv2(x))
+        x = self.pool(x)
+        print(x.shape)
+        torch.flatten(x)  # Flatten
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
 
-
-model = Network()
-model.to(device)
+# Instantiate the model
+model = CNN()
 
 loss_val=[]
 epochs = 20
@@ -116,6 +80,7 @@ for i in range(epochs):
     for data in tqdm(train_loader):
         batch = tuple(t.to(device) for t in data)
         values, labels = batch
+        values = values.view(-1, 18836)
         output = model(values.float())
         print(f"Output_maxed:{torch.argmax(output, dim=1)}")
         loss = loss_fn(output, labels)
@@ -144,4 +109,3 @@ for data in tqdm(test_loader):
 
 accuracy = (correct/total)*100
 print(f"\nTest Accuracy: {format(accuracy, '.4f')}%\n")
-
