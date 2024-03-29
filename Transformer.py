@@ -15,11 +15,13 @@ from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from torch.utils.data import dataset
 
 
-if torch.cuda.is_available():
-    device = "cuda:0"
-else:
-    device = "cpu"
-data1 = pd.read_csv("/content/drive/MyDrive/final_data.csv")
+# if torch.cuda.is_available():
+#     device = "cuda:0"
+# else:
+#     device = "cpu"
+device = torch.device("cpu")
+print(device)
+data1 = pd.read_csv("final_data.csv")
 temp = []
 for i in range(len(data1['A/C'])):
     if data1['A/C'][i] == 'A':
@@ -33,28 +35,12 @@ final=data1
 vector=[]
 for i in range(len(final)):
   vector.append(final.iloc[i].tolist())
-bptt = len(vector[0])
-def get_batch(source, i):
-    seq_len = min(bptt, len(source) - 1 - i)
-    data = source[i:i+seq_len]
-    target = source[i+1:i+1+seq_len].reshape(-1)
-    return data, target
-
-input=[]
-target=[]
-for i in range(len(vector)):
-  vect_tensor = torch.tensor(vector[i])
-  var = get_batch(vect_tensor, 0)
-  input.append(var[0].tolist())
-  target.append(var[1].tolist())
-len(input), len (target)
-X_train, X_test, y_train, y_test = train_test_split(input, target, test_size=0.3, shuffle=True)
+X_train, X_test = train_test_split(vector, test_size=0.3, shuffle=True)
 X_train_tensor = torch.tensor(X_train)
 X_test_tensor = torch.tensor(X_test)
-y_train_tensor = torch.tensor(y_train)
-y_test_tensor = torch.tensor(y_test)
-train_set = TensorDataset(X_train_tensor, y_train_tensor)
-test_set = TensorDataset(X_test_tensor, y_test_tensor)
+
+train_set = TensorDataset(X_train_tensor)
+test_set = TensorDataset(X_test_tensor)
 
 train_loader = DataLoader(train_set, batch_size=32)
 test_loader = DataLoader(test_set, batch_size=32)
@@ -116,6 +102,12 @@ model = TransformerModel(ntokens, emsize, nhead, d_hid, nlayers, dropout).to(dev
 
 loss_fn = nn.CrossEntropyLoss()
 lr = 0.1
+bptt = len(vector[0])
+def get_batch(source, i):
+    seq_len = min(bptt, len(source) - 1 - i)
+    data = source[i:i+seq_len]
+    target = source[i+1:i+1+seq_len].reshape(-1)
+    return data, target
 optimizer = optim.SGD(model.parameters(), lr=lr)
 model.train()
 total_loss=0.
@@ -127,10 +119,18 @@ model.train()
 for i in range(epochs):
     for data in tqdm(train_loader):
         batch = tuple(t.to(device) for t in data)
-        values, labels = batch
-        output = model(values.int())
+        values = batch
+        datas = torch.tensor(values[0])
+        print(f"Tensor: {datas}")
+        # print(values.shape)
+        # print(labels.shape)
+        data, targets = get_batch(datas, i)
+        output = model(data.int())
         output_flat = output.view(-1, ntokens)
-        loss = loss_fn(output_flat, labels)
+        #print(f"Output: {output}")
+        print(output_flat.shape)
+        print(f"targets: {targets.shape}")
+        loss = loss_fn(output_flat, targets.type(torch.LongTensor))
         optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
