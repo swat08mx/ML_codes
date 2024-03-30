@@ -114,7 +114,7 @@ total_loss=0.
 log_interval=200
 loss_val_train=[]
 running_loss_train=[]
-epochs = 10
+epochs = 30
 model.train()
 j=0
 for i in range(epochs):
@@ -143,15 +143,15 @@ for i in range(epochs):
 
 model.eval()
 running_loss_test=[]
-loss_val_test=[]
-total_loss=0.
 with torch.no_grad():
   for data in tqdm(test_loader):
     batch = tuple(t.to(device) for t in data)
-    values, labels = batch
-    output = model(values)
+    values = batch
+    datas = torch.tensor(values[0])
+    data, targets = get_batch(datas, 0)
+    output = model(values.int())
     output_flat = output.view(-1, ntokens)
-    loss = loss_fn(output_flat, labels)
+    loss = loss_fn(output_flat, targets.type(torch.LongTensor).to(device))
     running_loss_test.append(loss.item())
   for i in range(len(running_loss_test)): total+=running_loss_test[i]
   print(f"Total test loss is: {total/len(running_loss_test)}")
