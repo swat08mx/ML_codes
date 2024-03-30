@@ -110,7 +110,6 @@ def get_batch(source, i):
     return data, target
 optimizer = optim.SGD(model.parameters(), lr=lr)
 model.train()
-total_loss=0.
 log_interval=200
 loss_val_train=[]
 running_loss_train=[]
@@ -122,13 +121,9 @@ for i in range(epochs):
         batch = tuple(t.to(device) for t in data)
         values = batch
         datas = torch.tensor(values[0])
-        print(f"Tensor: {datas.shape}")
         data, targets = get_batch(datas, 0)
         output = model(data.int())
         output_flat = output.view(-1, ntokens)
-        print(f"Output: {output_flat.shape}")
-        #print(output_flat.shape)
-        print(f"targets: {targets.shape}")
         loss = loss_fn(output_flat, targets.type(torch.LongTensor).to(device))
         optimizer.zero_grad()
         loss.backward()
@@ -142,6 +137,7 @@ for i in range(epochs):
     print(f"Training Loss for this epoch is: {total/len(running_loss_train)}")
 
 model.eval()
+total=0
 running_loss_test=[]
 with torch.no_grad():
   for data in tqdm(test_loader):
@@ -149,9 +145,12 @@ with torch.no_grad():
     values = batch
     datas = torch.tensor(values[0])
     data, targets = get_batch(datas, 0)
-    output = model(values.int())
+    output = model(data.int())
     output_flat = output.view(-1, ntokens)
     loss = loss_fn(output_flat, targets.type(torch.LongTensor).to(device))
+    running_loss_test.append(loss.item())
+  for i in range(len(running_loss_test)): total+=running_loss_test[i]
+  print(f"Total test loss is: {total/len(running_loss_test)}")
     running_loss_test.append(loss.item())
   for i in range(len(running_loss_test)): total+=running_loss_test[i]
   print(f"Total test loss is: {total/len(running_loss_test)}")
