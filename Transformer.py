@@ -15,11 +15,11 @@ from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from torch.utils.data import dataset
 
 
-# if torch.cuda.is_available():
-#     device = "cuda:0"
-# else:
-#     device = "cpu"
-device = torch.device("cpu")
+if torch.cuda.is_available():
+    device = "cuda:0"
+else:
+    device = "cpu"
+# device = torch.device("cpu")
 print(device)
 data1 = pd.read_csv("final_data.csv")
 temp = []
@@ -42,8 +42,8 @@ X_test_tensor = torch.tensor(X_test)
 train_set = TensorDataset(X_train_tensor)
 test_set = TensorDataset(X_test_tensor)
 
-train_loader = DataLoader(train_set, batch_size=32)
-test_loader = DataLoader(test_set, batch_size=32)
+train_loader = DataLoader(train_set, batch_size=10)
+test_loader = DataLoader(test_set, batch_size=10)
 
 class TransformerModel(nn.Module):
 
@@ -101,7 +101,7 @@ dropout = 0.2  # dropout probability
 model = TransformerModel(ntokens, emsize, nhead, d_hid, nlayers, dropout).to(device)
 
 loss_fn = nn.CrossEntropyLoss()
-lr = 0.1
+lr = 0.001
 bptt = len(vector[0])
 def get_batch(source, i):
     seq_len = min(bptt, len(source) - 1 - i)
@@ -114,26 +114,25 @@ total_loss=0.
 log_interval=200
 loss_val_train=[]
 running_loss_train=[]
-epochs = 30
+epochs = 10
 model.train()
+j=0
 for i in range(epochs):
     for data in tqdm(train_loader):
         batch = tuple(t.to(device) for t in data)
         values = batch
         datas = torch.tensor(values[0])
-        print(f"Tensor: {datas}")
-        # print(values.shape)
-        # print(labels.shape)
-        data, targets = get_batch(datas, i)
+        print(f"Tensor: {datas.shape}")
+        data, targets = get_batch(datas, 0)
         output = model(data.int())
         output_flat = output.view(-1, ntokens)
-        #print(f"Output: {output}")
-        print(output_flat.shape)
+        print(f"Output: {output_flat.shape}")
+        #print(output_flat.shape)
         print(f"targets: {targets.shape}")
-        loss = loss_fn(output_flat, targets.type(torch.LongTensor))
+        loss = loss_fn(output_flat, targets.type(torch.LongTensor).to(device))
         optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
+        #torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
         optimizer.step()
         running_loss_train.append(loss.item())
     print(f"Epoch {i}")
