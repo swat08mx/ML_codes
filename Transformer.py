@@ -151,6 +151,6 @@ with torch.no_grad():
     running_loss_test.append(loss.item())
   for i in range(len(running_loss_test)): total+=running_loss_test[i]
   print(f"Total test loss is: {total/len(running_loss_test)}")
-    running_loss_test.append(loss.item())
+  running_loss_test.append(loss.item())
   for i in range(len(running_loss_test)): total+=running_loss_test[i]
   print(f"Total test loss is: {total/len(running_loss_test)}")

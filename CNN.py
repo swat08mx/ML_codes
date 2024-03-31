@@ -37,7 +37,6 @@ X_train_tensor = torch.tensor(X_train)
 X_test_tensor = torch.tensor(X_test)
 y_train_tensor = torch.tensor(y_train)
 y_test_tensor = torch.tensor(y_test)
-print(X_train_tensor.shape, y_train_tensor.shape)
 train_set = TensorDataset(X_train_tensor, y_train_tensor)
 test_set = TensorDataset(X_test_tensor, y_test_tensor)
 
@@ -54,10 +53,10 @@ class CNN(nn.Module):
     self.conv3 = nn.Conv2d(64, 32, kernel_size=3, padding=1)
     self.conv4 = nn.Conv2d(32, 9, kernel_size=3, padding=1)
     self.fc1 = nn.Linear(1178, 128)
-    self.fc2 = nn.Linear(128, 300)
-    self.fc3 = nn.Linear(300, 128)
+    # self.fc2 = nn.Linear(128, 300)
+    # self.fc3 = nn.Linear(300, 128)
     self.fc4 = nn.Linear(128, 2)
-    self.dropout = nn.Dropout(0.6)
+    self.dropout = nn.Dropout(0.2)
 
   def forward(self, x):
     x = x.unsqueeze(0)
@@ -68,16 +67,18 @@ class CNN(nn.Module):
     x = torch.flatten(x, 1)
     x = self.dropout(x)
     x = F.relu(self.fc1(x))
-    x = F.relu(self.fc2(x))
-    x = F.relu(self.fc3(x))
+    # x = F.relu(self.fc2(x))
+    # x = F.relu(self.fc3(x))
     x = self.fc4(x)
     return x
 
 model = CNN()
+model.to(device)
 
+running_loss=[]
 loss_val=[]
-epochs = 40
-optimizer = optim.Adam(params=model.parameters(), lr=0.001)
+epochs = 100
+optimizer = optim.Adam(params=model.parameters(), lr=0.0001)
 loss_fn = nn.CrossEntropyLoss()
 model.train()
 for i in range(epochs):
@@ -94,9 +95,13 @@ for i in range(epochs):
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
-        loss_val.append(loss.item())
-        print(f"Loss is :{loss.item()}")
+        running_loss.append(loss.item())
     print(f"Epoch {i}")
+    total=0
+    for i in range(len(running_loss)): total+=running_loss[i]
+    loss_val.append(total/len(running_loss))
+    print(f"Training Loss for this epoch is: {total/len(running_loss)}")
+
 
 model.eval()
 correct = 0
@@ -110,11 +115,28 @@ for data in tqdm(test_loader):
     predicted = torch.argmax(output, dim=1)
     print(f"Predicted {predicted}")
     print(f"Labels {labels}")
-    pred.append(predicted)
-    label.append(labels)
+    pred.append(predicted.cpu())
+    label.append(labels.cpu())
     total += labels.size(0)
     print(total)
     correct += (predicted == labels).sum().item()
 
 accuracy = (correct/total)*100
 print(f"\nTest Accuracy: {format(accuracy, '.4f')}%\n")
+
+var = []
+for i in range(len(pred)):
+  var.append(pred[i].tolist())
+pred_new=[]
+for j in range(len(var)):
+  for k in range(len(var[j])):
+    pred_new.append(var[j][k])
+var_new = []
+for i in range(len(label)):
+  var_new.append(label[i].tolist())
+label_new=[]
+for j in range(len(var_new)):
+  for k in range(len(var[j])):
+    label_new.append(var_new[j][0])
+from sklearn.metrics import confusion_matrix
+confusion_matrix(label_new, pred_new)
