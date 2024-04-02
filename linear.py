@@ -8,48 +8,59 @@ from tqdm import tqdm
 from torch import nn
 import pandas as pd
 
+import pandas as pd
+data1 = pd.read_csv("/content/drive/MyDrive/final_data.csv")
+final=data1
+dim=60
+labels_two = final['A/C'].to_list()
+temp=[]
+for i in range(len(labels_two)):
+    if labels_two[i] == 'A':
+        temp.append(1)
+    else:
+        temp.append(0)
+final.drop('A/C', axis=1, inplace=True)
+final.drop('Sample_ID', axis=1, inplace=True)
+from sklearn.preprocessing import StandardScaler
+x = data1.loc[:, data1.columns].values
+x = StandardScaler().fit_transform(x) # normalizing the features
+import numpy as np
+np.mean(x),np.std(x)
+feat_cols = ['feature'+str(i) for i in range(x.shape[1])]
+normalised = pd.DataFrame(x,columns=feat_cols)
+normalised.tail()
+from sklearn.decomposition import PCA
+pca = PCA(n_components=dim)
+principalComponents = pca.fit_transform(x)
+cols = ['PC'+str(i) for i in range(dim)]
+principal_Df = pd.DataFrame(data = principalComponents, columns = cols)
+principal_Df.head()
+print('Explained variation per principal component: {}'.format(pca.explained_variance_ratio_))
+calc = pca.explained_variance_ratio_
+calc.sum()
+
+
 if torch.cuda.is_available():
     device = "cuda:0"
 else:
     device = "cpu"
-data1 = pd.read_csv("final_data.csv")
-# data1=data1.iloc[:, :5000]
-print(data1)
-temp = []
-for i in range(len(data1['A/C'])):
-    if data1['A/C'][i] == 'A':
-        temp.append(1)
-    else:
-        temp.append(0)
-data1.drop('A/C', axis=1, inplace=True)
-data1.drop('Sample_ID', axis=1, inplace=True)
-# temp = pd.DataFrame(temp, columns=['labels'])
-final=data1
-
-# new=[]
-# neu=[]
+# data1 = pd.read_csv("/content/drive/MyDrive/final_data.csv")
+# temp_new = data1['A/C']
+# #data1=data1.iloc[:, :9000]
+# print(data1)
+# temp = []
 # for i in range(len(data1['A/C'])):
 #     if data1['A/C'][i] == 'A':
-#         new.append(i)
-#     else:
-#         neu.append(i)
-# #print(f"The A is {len(new)} and C is {len(neu)}")
-# temp = neu[:200]
-# df = data1.iloc[new]
-# df1 = data1.iloc[temp]
-# final = pd.concat([df,df1], ignore_index=False)
-# labels_two = final['A/C'].to_list()
-# temp=[]
-# for i in range(len(labels_two)):
-#     if labels_two[i] == 'A':
 #         temp.append(1)
 #     else:
 #         temp.append(0)
-# #temp = pd.DataFrame(temp, columns=['labels'])
-# final.drop('A/C', axis=1, inplace=True)
-# final.drop('Sample_ID', axis=1, inplace=True)
+# data1.drop('A/C', axis=1, inplace=True)
+# data1.drop('Sample_ID', axis=1, inplace=True)
+# # temp = pd.DataFrame(temp, columns=['labels'])
+# final=data1
 
-X_train, X_test, y_train, y_test = train_test_split(final, temp, test_size=0.3, shuffle=True)
+
+X_train, X_test, y_train, y_test = train_test_split(principal_Df, temp, test_size=0.3, shuffle=True)
 sc = StandardScaler()
 X_train = sc.fit_transform(X_train)
 X_test = sc.transform(X_test)
@@ -68,31 +79,20 @@ class Network(nn.Module):
     def __init__(self):
         super().__init__()
         self.layer_stack = nn.Sequential(
-            nn.Linear(18836, 15000),
+            nn.Linear(60, 120),
             nn.ReLU(),
-            nn.Linear(15000, 12000),
+            nn.Linear(120, 100),
             nn.ReLU(),
-            nn.Linear(12000, 9000),
+            nn.Linear(100, 80),
             nn.ReLU(),
-            nn.Linear(9000, 6000),
+            nn.Linear(80, 60),
             nn.ReLU(),
-            nn.Linear(6000, 3000),
+            nn.Linear(60, 30),
             nn.ReLU(),
-            nn.Linear(3000, 1000),
+            nn.Dropout(0.5),
+            nn.Linear(30, 15),
             nn.ReLU(),
-            nn.Linear(1000, 512),
-            nn.ReLU(),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Linear(256, 128),
-            nn.ReLU(),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, 16),
-            nn.ReLU(),
-            nn.Linear(16, 8),
+            nn.Linear(15, 8),
             nn.ReLU(),
             nn.Linear(8, 4),
             nn.ReLU(),
@@ -108,8 +108,9 @@ model = Network()
 model.to(device)
 
 loss_val=[]
-epochs = 20
-optimizer = optim.Adam(params=model.parameters(), lr=0.001)
+running_loss=[]
+epochs = 200
+optimizer = optim.Adam(params=model.parameters(), lr=0.0001)
 loss_fn = nn.CrossEntropyLoss()
 model.train()
 for i in range(epochs):
@@ -122,9 +123,13 @@ for i in range(epochs):
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
-        loss_val.append(loss.item())
-        print(f"Loss is :{loss.item()}")
+        running_loss.append(loss.item())
+        #print(f"Loss is :{loss.item()}")
     print(f"Epoch {i}")
+    total=0
+    for i in range(len(running_loss)): total+=running_loss[i]
+    loss_val.append(total/len(running_loss))
+    print(f"Loss: {total/len(running_loss)}")
 
 model.eval()
 correct = 0
@@ -144,4 +149,3 @@ for data in tqdm(test_loader):
 
 accuracy = (correct/total)*100
 print(f"\nTest Accuracy: {format(accuracy, '.4f')}%\n")
-
