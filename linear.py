@@ -9,9 +9,9 @@ from torch import nn
 import pandas as pd
 
 import pandas as pd
-data1 = pd.read_csv("/content/drive/MyDrive/final_data.csv")
+data1 = pd.read_csv("sample.csv")
 final=data1
-dim=60
+dim=120
 labels_two = final['A/C'].to_list()
 temp=[]
 for i in range(len(labels_two)):
@@ -20,7 +20,7 @@ for i in range(len(labels_two)):
     else:
         temp.append(0)
 final.drop('A/C', axis=1, inplace=True)
-final.drop('Sample_ID', axis=1, inplace=True)
+#final.drop('Sample_ID', axis=1, inplace=True)
 from sklearn.preprocessing import StandardScaler
 x = data1.loc[:, data1.columns].values
 x = StandardScaler().fit_transform(x) # normalizing the features
@@ -37,9 +37,9 @@ principal_Df = pd.DataFrame(data = principalComponents, columns = cols)
 principal_Df.head()
 print('Explained variation per principal component: {}'.format(pca.explained_variance_ratio_))
 calc = pca.explained_variance_ratio_
-calc.sum()
+print(calc.sum())
 
-
+print(principal_Df.head())
 if torch.cuda.is_available():
     device = "cuda:0"
 else:
@@ -79,8 +79,6 @@ class Network(nn.Module):
     def __init__(self):
         super().__init__()
         self.layer_stack = nn.Sequential(
-            nn.Linear(60, 120),
-            nn.ReLU(),
             nn.Linear(120, 100),
             nn.ReLU(),
             nn.Linear(100, 80),
@@ -118,7 +116,7 @@ for i in range(epochs):
         batch = tuple(t.to(device) for t in data)
         values, labels = batch
         output = model(values.float())
-        print(f"Output_maxed:{torch.argmax(output, dim=1)}")
+        #print(f"Output_maxed:{torch.argmax(output, dim=1)}")
         loss = loss_fn(output, labels)
         loss.backward()
         optimizer.step()
@@ -141,11 +139,14 @@ for data in tqdm(test_loader):
     values, labels = batch
     output = model(values.float())
     predicted = torch.argmax(output, dim=1)
-    print(output)
-    pred.append(predicted)
-    label.append(labels)
+    #print(output)
+    pred.append(predicted.cpu())
+    label.append(labels.cpu())
     total += labels.size(0)
     correct += (predicted == labels).sum().item()
 
 accuracy = (correct/total)*100
 print(f"\nTest Accuracy: {format(accuracy, '.4f')}%\n")
+
+from sklearn.metrics import confusion_matrix
+print(confusion_matrix(label, pred))
