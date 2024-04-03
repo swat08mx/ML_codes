@@ -9,9 +9,9 @@ from torch import nn
 import pandas as pd
 
 import pandas as pd
-data1 = pd.read_csv("sample.csv")
+data1 = pd.read_csv("final_data.csv")
 final=data1
-dim=120
+dim=60
 labels_two = final['A/C'].to_list()
 temp=[]
 for i in range(len(labels_two)):
@@ -20,7 +20,7 @@ for i in range(len(labels_two)):
     else:
         temp.append(0)
 final.drop('A/C', axis=1, inplace=True)
-#final.drop('Sample_ID', axis=1, inplace=True)
+final.drop('Sample_ID', axis=1, inplace=True)
 from sklearn.preprocessing import StandardScaler
 x = data1.loc[:, data1.columns].values
 x = StandardScaler().fit_transform(x) # normalizing the features
@@ -44,21 +44,6 @@ if torch.cuda.is_available():
     device = "cuda:0"
 else:
     device = "cpu"
-# data1 = pd.read_csv("/content/drive/MyDrive/final_data.csv")
-# temp_new = data1['A/C']
-# #data1=data1.iloc[:, :9000]
-# print(data1)
-# temp = []
-# for i in range(len(data1['A/C'])):
-#     if data1['A/C'][i] == 'A':
-#         temp.append(1)
-#     else:
-#         temp.append(0)
-# data1.drop('A/C', axis=1, inplace=True)
-# data1.drop('Sample_ID', axis=1, inplace=True)
-# # temp = pd.DataFrame(temp, columns=['labels'])
-# final=data1
-
 
 X_train, X_test, y_train, y_test = train_test_split(principal_Df, temp, test_size=0.3, shuffle=True)
 sc = StandardScaler()
@@ -79,15 +64,9 @@ class Network(nn.Module):
     def __init__(self):
         super().__init__()
         self.layer_stack = nn.Sequential(
-            nn.Linear(120, 100),
-            nn.ReLU(),
-            nn.Linear(100, 80),
-            nn.ReLU(),
-            nn.Linear(80, 60),
-            nn.ReLU(),
             nn.Linear(60, 30),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.8),
             nn.Linear(30, 15),
             nn.ReLU(),
             nn.Linear(15, 8),
@@ -107,8 +86,8 @@ model.to(device)
 
 loss_val=[]
 running_loss=[]
-epochs = 200
-optimizer = optim.Adam(params=model.parameters(), lr=0.0001)
+epochs = 100
+optimizer = optim.Adam(params=model.parameters(), lr=0.001)
 loss_fn = nn.CrossEntropyLoss()
 model.train()
 for i in range(epochs):
