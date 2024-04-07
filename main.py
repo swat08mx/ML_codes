@@ -7,32 +7,50 @@ from sklearn import metrics, svm
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
 from sklearn import metrics
+import statistics
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-data1 = pd.read_csv("C:/Users/swatt/PycharmProjects/gene_expression/files/final_data.csv")
+import numpy as np
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import GridSearchCV, KFold
 
-new=[]
-neu=[]
+data1 = pd.read_csv("final_data.csv")
+temp = []
 for i in range(len(data1['A/C'])):
     if data1['A/C'][i] == 'A':
-        new.append(i)
-    else:
-        neu.append(i)
-#print(f"The A is {len(new)} and C is {len(neu)}")
-temp = neu[:200]
-df = data1.iloc[new]
-df1 = data1.iloc[temp]
-final = pd.concat([df,df1], ignore_index=False)
-labels_two = final['A/C'].to_list()
-temp=[]
-for i in range(len(labels_two)):
-    if labels_two[i] == 'A':
         temp.append(1)
     else:
         temp.append(0)
+data1.drop(['A/C', 'Sample_ID'], axis=1, inplace=True)
 temp = pd.DataFrame(temp, columns=['labels'])
-final.drop('A/C', axis=1, inplace=True)
-final.drop('Sample_ID', axis=1, inplace=True)
+X_train, X_test, y_train, y_test = train_test_split(data1, temp, test_size=0.3, shuffle=True)
+params = {"alpha":np.arange(0.00001, 0.25, 10)}
+kf=KFold(n_splits=5,shuffle=True, random_state=42)
+lasso = Lasso()
+lasso_cv=GridSearchCV(lasso, param_grid=params, cv=kf)
+lasso_cv.fit(data1, temp)
+print("Best Params {}".format(lasso_cv.best_params_))
+
+names = data1.columns
+print("Column Names: {}".format(names.values))
+
+
+lasso1 = Lasso(alpha=0.00001)
+lasso1.fit(X_train, y_train)
+lasso1_coef = np.abs(lasso1.coef_)
+lists = lasso1_coef.tolist()
+print(min(lists))
+print(statistics.median(lists))
+median = statistics.median(lists)
+print(lasso1_coef)
+
+feature_subset=np.array(names)[lasso1_coef>0.001]
+print("Selected Feature Columns: {}".format(feature_subset))
+
+df_new = data1[feature_subset]
+
+
 def sensitivity(pred, y_test):
     tp = 0
     fn = 0
@@ -115,11 +133,11 @@ sensit_lr, specif_lr, accu_lr, prec_lr, auc_list_lr, ppv_list_lr, npv_list_lr, f
 sensit_rf, specif_rf, accu_rf, prec_rf, auc_list_rf, ppv_list_rf, npv_list_rf, f1_rf = ([] for i in range(8))
 sensit_sv, specif_sv, accu_sv, prec_sv, auc_list_sv, ppv_list_sv, npv_list_sv, f1_sv = ([] for i in range(8))
 
-kf = KFold(10, random_state=None, shuffle=True)
-for i, (train_index, test_index) in tqdm(enumerate(kf.split(final))):
+kf = KFold(10, shuffle=True)
+for i, (train_index, test_index) in tqdm(enumerate(kf.split(df_new))):
     print(f"Fold {i}")
-    X_train = final.iloc[train_index, :]
-    X_test = final.iloc[test_index, :]
+    X_train = df_new.iloc[train_index, :]
+    X_test = df_new.iloc[test_index, :]
     y_train = temp.iloc[train_index]
     y_test = temp.iloc[test_index]
     y_test_temp = y_test['labels'].to_list()
@@ -128,7 +146,7 @@ for i, (train_index, test_index) in tqdm(enumerate(kf.split(final))):
     X_test = sc.transform(X_test)
 
     print("XGBoost")
-    model_xg = XGBClassifier(n_estimators=10, max_depth=10, learning_rate=1, objective='binary:logistic')
+    model_xg = XGBClassifier(learning_rate=0.05, device='gpu', objective='binary:logistic')
     model_xg.fit(X_train, y_train.values.ravel())
     pred_prob_xg = model_xg.predict_proba(X_test)[:, 1]
     pred_xg = model_xg.predict(X_test)
@@ -166,7 +184,7 @@ for i, (train_index, test_index) in tqdm(enumerate(kf.split(final))):
     f1_lr.append(float("{:.2f}".format(f1(y_test_temp, pred_lr))))
 
     print("Random Forest")
-    model_rf = RandomForestClassifier(n_estimators=1000)
+    model_rf = RandomForestClassifier(n_estimators=2000)
     model_rf.fit(X_train, y_train.values.ravel())
     pred_prob_rf = model_rf.predict_proba(X_test)[:, 1]
     pred_rf = model_rf.predict(X_test)
@@ -217,19 +235,19 @@ print(df_lr)
 print(df_rf)
 print(df_sv)
 
-lists_xg = df_xg.columns
-for items in lists_xg:
-    print(f" Mean of XGBoost {items}: {"{:.2f}".format(df_xg[items].mean(axis=0))}")
-    print(f" Std dev of XGBoost {items}: {"{:.2f}".format(df_xg[items].std(axis=0))}")
-lists_lr = df_lr.columns
-for items in lists_lr:
-    print(f" Mean of Logistic Regression {items}: {"{:.2f}".format(df_lr[items].mean(axis=0))}")
-    print(f" Std dev of Logistic Regression {items}: {"{:.2f}".format(df_lr[items].std(axis=0))}")
-lists_rf = df_rf.columns
-for items in lists_rf:
-    print(f" Mean of Random Forest {items}: {"{:.2f}".format(df_rf[items].mean(axis=0))}")
-    print(f" Std dev of Random Forest {items}: {"{:.2f}".format(df_rf[items].std(axis=0))}")
-lists_sv = df_sv.columns
-for items in lists_sv:
-    print(f" Mean of Support Vector Machine {items}: {"{:.2f}".format(df_sv[items].mean(axis=0))}")
-    print(f" Std dev of Support Vector Machine {items}: {"{:.2f}".format(df_sv[items].std(axis=0))}")
+# lists_xg = df_xg.columns
+# for items in lists_xg:
+#     print(f" Mean of XGBoost {items}: {"{:.2f}".format(df_xg[items].mean(axis=0))}")
+#     print(f" Std dev of XGBoost {items}: {"{:.2f}".format(df_xg[items].std(axis=0))}")
+# lists_lr = df_lr.columns
+# for items in lists_lr:
+#     print(f" Mean of Logistic Regression {items}: {"{:.2f}".format(df_lr[items].mean(axis=0))}")
+#     print(f" Std dev of Logistic Regression {items}: {"{:.2f}".format(df_lr[items].std(axis=0))}")
+# lists_rf = df_rf.columns
+# for items in lists_rf:
+#     print(f" Mean of Random Forest {items}: {"{:.2f}".format(df_rf[items].mean(axis=0))}")
+#     print(f" Std dev of Random Forest {items}: {"{:.2f}".format(df_rf[items].std(axis=0))}")
+# lists_sv = df_sv.columns
+# for items in lists_sv:
+#     print(f" Mean of Support Vector Machine {items}: {"{:.2f}".format(df_sv[items].mean(axis=0))}")
+#     print(f" Std dev of Support Vector Machine {items}: {"{:.2f}".format(df_sv[items].std(axis=0))}")
