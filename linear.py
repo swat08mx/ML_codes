@@ -7,125 +7,151 @@ from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 from torch import nn
 import pandas as pd
-
+from sklearn.model_selection import GridSearchCV, KFold
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.model_selection import train_test_split, cross_val_score
+import statistics
+
 data1 = pd.read_csv("final_data.csv")
-final=data1
-dim=60
-labels_two = final['A/C'].to_list()
-temp=[]
-for i in range(len(labels_two)):
-    if labels_two[i] == 'A':
+temp = []
+for i in range(len(data1['A/C'])):
+    if data1['A/C'][i] == 'A':
         temp.append(1)
     else:
         temp.append(0)
-final.drop('A/C', axis=1, inplace=True)
-final.drop('Sample_ID', axis=1, inplace=True)
-from sklearn.preprocessing import StandardScaler
-x = data1.loc[:, data1.columns].values
-x = StandardScaler().fit_transform(x) # normalizing the features
-import numpy as np
-np.mean(x),np.std(x)
-feat_cols = ['feature'+str(i) for i in range(x.shape[1])]
-normalised = pd.DataFrame(x,columns=feat_cols)
-normalised.tail()
-from sklearn.decomposition import PCA
-pca = PCA(n_components=dim)
-principalComponents = pca.fit_transform(x)
-cols = ['PC'+str(i) for i in range(dim)]
-principal_Df = pd.DataFrame(data = principalComponents, columns = cols)
-principal_Df.head()
-print('Explained variation per principal component: {}'.format(pca.explained_variance_ratio_))
-calc = pca.explained_variance_ratio_
-print(calc.sum())
+data1.drop(['A/C', 'Sample_ID'], axis=1, inplace=True)
+temp = pd.DataFrame(temp, columns=['labels'])
+X_train, X_test, y_train, y_test = train_test_split(data1, temp, test_size=0.3, shuffle=True)
+lasso = Lasso()
 
-print(principal_Df.head())
+names = data1.columns
+print("Column Names: {}".format(names.values))
+
+
+lasso1 = Lasso(alpha=0.001)
+lasso1.fit(X_train, y_train)
+lasso1_coef = np.abs(lasso1.coef_)
+lists = lasso1_coef.tolist()
+print(min(lists))
+print(statistics.median(lists))
+median = statistics.median(lists)
+print(len(lasso1_coef))
+
+feature_subset=np.array(names)[lasso1_coef>median]
+print("Selected Feature Columns: {}".format(feature_subset))
+
+df_new = data1[feature_subset]
 if torch.cuda.is_available():
     device = "cuda:0"
 else:
     device = "cpu"
+print(df_new)
+vals=[]
+for i in range(1):
+  temp = pd.DataFrame(temp, columns=['labels'])
+  X_train, X_test, y_train, y_test = train_test_split(df_new, temp, test_size=0.3, shuffle=True)
+  sc = StandardScaler()
+  X_train = sc.fit_transform(X_train)
+  X_test = sc.transform(X_test)
+  X_train_tensor = torch.tensor(X_train)
+  X_test_tensor = torch.tensor(X_test)
+  y_train_tensor = torch.tensor(y_train.values)
+  y_test_tensor = torch.tensor(y_test.values)
 
-X_train, X_test, y_train, y_test = train_test_split(principal_Df, temp, test_size=0.3, shuffle=True)
-sc = StandardScaler()
-X_train = sc.fit_transform(X_train)
-X_test = sc.transform(X_test)
-X_train_tensor = torch.tensor(X_train)
-X_test_tensor = torch.tensor(X_test)
-y_train_tensor = torch.tensor(y_train)
-y_test_tensor = torch.tensor(y_test)
+  train_set = TensorDataset(X_train_tensor, y_train_tensor)
+  test_set = TensorDataset(X_test_tensor, y_test_tensor)
 
-train_set = TensorDataset(X_train_tensor, y_train_tensor)
-test_set = TensorDataset(X_test_tensor, y_test_tensor)
+  train_loader = DataLoader(train_set, batch_size=32)
+  test_loader = DataLoader(test_set, batch_size=1)
 
-train_loader = DataLoader(train_set, batch_size=32)
-test_loader = DataLoader(test_set, batch_size=1)
+  class Network(nn.Module):
+      def __init__(self):
+          super().__init__()
+          self.layer_stack = nn.Sequential(
+              nn.Linear(len(feature_subset), 400),
+              nn.ReLU(),
+              nn.Linear(400, 200),
+              nn.ReLU(),
+              nn.Linear(200, 100),
+              nn.ReLU(),
+              nn.Dropout(0.8),
+              nn.Linear(100, 50),
+              nn.ReLU(),
+              nn.Linear(50, 8),
+              nn.ReLU(),
+              nn.Linear(8, 2),
+          )
 
-class Network(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.layer_stack = nn.Sequential(
-            nn.Linear(60, 30),
-            nn.ReLU(),
-            nn.Dropout(0.8),
-            nn.Linear(30, 15),
-            nn.ReLU(),
-            nn.Linear(15, 8),
-            nn.ReLU(),
-            nn.Linear(8, 4),
-            nn.ReLU(),
-            nn.Linear(4, 2),
-        )
+      def forward(self, x):
+          out = self.layer_stack(x)
+          return out
 
-    def forward(self, x):
-        out = self.layer_stack(x)
-        return out
+  model = Network()
+  model.to(device)
 
+  loss_val=[]
+  running_loss=[]
+  epochs = 100
+  optimizer = optim.Adam(params=model.parameters(), lr=0.001)
+  loss_fn = nn.CrossEntropyLoss()
+  model.train()
+  for i in range(epochs):
+      for data in tqdm(train_loader):
+          batch = tuple(t.to(device) for t in data)
+          values, labels = batch
+          output = model(values.float())
+          print(f"Output:{torch.argmax(output, dim=1)}")
+          #print(f"targets: {labels}")
+          labels = torch.squeeze(labels)
+          loss = loss_fn(output, labels)
+          loss.backward()
+          optimizer.step()
+          optimizer.zero_grad()
+          running_loss.append(loss.item())
+          #print(f"Loss is :{loss.item()}")
+      print(f"Epoch {i}")
+      total=0
+      for i in range(len(running_loss)): total+=running_loss[i]
+      loss_val.append(total/len(running_loss))
+      print(f"Loss: {total/len(running_loss)}")
 
-model = Network()
-model.to(device)
+  model.eval()
+  correct = 0
+  total = 0
+  pred=[]
+  label=[]
+  for data in tqdm(test_loader):
+      batch = tuple(t.to(device) for t in data)
+      values, labels = batch
+      output = model(values.float())
+      predicted = torch.argmax(output, dim=1)
+      #print(output)
+      pred.append(predicted.cpu())
+      label.append(labels.cpu())
+      total += labels.size(0)
+      correct += (predicted == labels).sum().item()
 
-loss_val=[]
-running_loss=[]
-epochs = 100
-optimizer = optim.Adam(params=model.parameters(), lr=0.001)
-loss_fn = nn.CrossEntropyLoss()
-model.train()
-for i in range(epochs):
-    for data in tqdm(train_loader):
-        batch = tuple(t.to(device) for t in data)
-        values, labels = batch
-        output = model(values.float())
-        #print(f"Output_maxed:{torch.argmax(output, dim=1)}")
-        loss = loss_fn(output, labels)
-        loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
-        running_loss.append(loss.item())
-        #print(f"Loss is :{loss.item()}")
-    print(f"Epoch {i}")
-    total=0
-    for i in range(len(running_loss)): total+=running_loss[i]
-    loss_val.append(total/len(running_loss))
-    print(f"Loss: {total/len(running_loss)}")
+  accuracy = (correct/total)*100
+  print(f"\nTest Accuracy: {format(accuracy, '.4f')}%\n")
+  vals.append(accuracy)
+print(vals)
 
-model.eval()
-correct = 0
-total = 0
-pred=[]
-label=[]
-for data in tqdm(test_loader):
-    batch = tuple(t.to(device) for t in data)
-    values, labels = batch
-    output = model(values.float())
-    predicted = torch.argmax(output, dim=1)
-    #print(output)
-    pred.append(predicted.cpu())
-    label.append(labels.cpu())
-    total += labels.size(0)
-    correct += (predicted == labels).sum().item()
-
-accuracy = (correct/total)*100
-print(f"\nTest Accuracy: {format(accuracy, '.4f')}%\n")
-
+var = []
+for i in range(len(pred)):
+  var.append(pred[i].tolist())
+pred_new=[]
+for j in range(len(var)):
+  for k in range(len(var[j])):
+    pred_new.append(var[j][k])
+var_new = []
+for i in range(len(label)):
+  var_new.append(label[i].tolist())
+label_new=[]
+for j in range(len(var_new)):
+  for k in range(len(var[j])):
+    label_new.append(var_new[j][0])
 from sklearn.metrics import confusion_matrix
-print(confusion_matrix(label, pred))
+print(confusion_matrix(label_new, pred_new))
