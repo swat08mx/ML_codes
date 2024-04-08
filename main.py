@@ -15,7 +15,7 @@ from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV, KFold
 
-data1 = pd.read_csv("final_data.csv")
+data1 = pd.read_csv("/content/drive/MyDrive/final_data.csv")
 temp = []
 for i in range(len(data1['A/C'])):
     if data1['A/C'][i] == 'A':
@@ -25,18 +25,18 @@ for i in range(len(data1['A/C'])):
 data1.drop(['A/C', 'Sample_ID'], axis=1, inplace=True)
 temp = pd.DataFrame(temp, columns=['labels'])
 X_train, X_test, y_train, y_test = train_test_split(data1, temp, test_size=0.3, shuffle=True)
-params = {"alpha":np.arange(0.00001, 0.25, 10)}
-kf=KFold(n_splits=5,shuffle=True, random_state=42)
+# params = {"alpha":np.arange(0.00001, 0.25, 10)}
+# kf=KFold(n_splits=5,shuffle=True, random_state=42)
 lasso = Lasso()
-lasso_cv=GridSearchCV(lasso, param_grid=params, cv=kf)
-lasso_cv.fit(data1, temp)
-print("Best Params {}".format(lasso_cv.best_params_))
+# lasso_cv=GridSearchCV(lasso, param_grid=params, cv=kf)
+# lasso_cv.fit(data1, temp)
+# print("Best Params {}".format(lasso_cv.best_params_))
 
 names = data1.columns
 print("Column Names: {}".format(names.values))
 
 
-lasso1 = Lasso(alpha=0.00001)
+lasso1 = Lasso(alpha=0.001)
 lasso1.fit(X_train, y_train)
 lasso1_coef = np.abs(lasso1.coef_)
 lists = lasso1_coef.tolist()
@@ -154,7 +154,6 @@ for i, (train_index, test_index) in tqdm(enumerate(kf.split(df_new))):
     plt.title(f"ROC curve")
     plt.plot(fpr, tpr, label=f'Fold {i}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_xg))}')
     plt.legend()
-    plt.show()
     sensit_xg.append(float("{:.2f}".format(sensitivity(pred_xg, y_test_temp))))
     specif_xg.append(float("{:.2f}".format(specificity(pred_xg, y_test_temp))))
     accu_xg.append(float("{:.2f}".format(accuracy(y_test_temp, pred_xg))))
@@ -173,7 +172,6 @@ for i, (train_index, test_index) in tqdm(enumerate(kf.split(df_new))):
     plt.title(f"ROC curve")
     plt.plot(fpr, tpr, label=f'Fold {i}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_lr))}')
     plt.legend()
-    plt.show()
     sensit_lr.append(float("{:.2f}".format(sensitivity(pred_lr, y_test_temp))))
     specif_lr.append(float("{:.2f}".format(specificity(pred_lr, y_test_temp))))
     accu_lr.append(float("{:.2f}".format(accuracy(y_test_temp, pred_lr))))
@@ -192,7 +190,6 @@ for i, (train_index, test_index) in tqdm(enumerate(kf.split(df_new))):
     plt.title(f"ROC curve")
     plt.plot(fpr, tpr, label=f'Fold {i}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_rf))}')
     plt.legend()
-    plt.show()
     sensit_rf.append(float("{:.2f}".format(sensitivity(pred_rf, y_test_temp))))
     specif_rf.append(float("{:.2f}".format(specificity(pred_rf, y_test_temp))))
     accu_rf.append(float("{:.2f}".format(accuracy(y_test_temp, pred_rf))))
@@ -211,7 +208,6 @@ for i, (train_index, test_index) in tqdm(enumerate(kf.split(df_new))):
     plt.title(f"ROC curve")
     plt.plot(fpr, tpr, label=f'Fold {i}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_sv))}')
     plt.legend()
-    plt.show()
     sensit_sv.append(float("{:.2f}".format(sensitivity(pred_sv, y_test_temp))))
     specif_sv.append(float("{:.2f}".format(specificity(pred_sv, y_test_temp))))
     accu_sv.append(float("{:.2f}".format(accuracy(y_test_temp, pred_lr))))
@@ -220,6 +216,7 @@ for i, (train_index, test_index) in tqdm(enumerate(kf.split(df_new))):
     ppv_list_sv.append(float("{:.2f}".format(ppv(pred_sv, y_test_temp))))
     npv_list_sv.append(float("{:.2f}".format(npv(pred_sv, y_test_temp))))
     f1_sv.append(float("{:.2f}".format(f1(y_test_temp, pred_sv))))
+    plt.show()
 
 dict_xg = {'AUC':auc_list_xg, 'Sensitivity':sensit_xg, 'Specificity': specif_xg, 'PPV':ppv_list_xg, 'NPV':npv_list_xg, 'Accuracy':accu_xg, 'Precision':prec_xg, 'F1':f1_xg}
 dict_lr = {'AUC':auc_list_lr, 'Sensitivity':sensit_lr, 'Specificity': specif_lr, 'PPV':ppv_list_lr, 'NPV':npv_list_lr, 'Accuracy':accu_lr, 'Precision':prec_lr, 'F1':f1_lr}
@@ -235,19 +232,20 @@ print(df_lr)
 print(df_rf)
 print(df_sv)
 
-# lists_xg = df_xg.columns
-# for items in lists_xg:
-#     print(f" Mean of XGBoost {items}: {"{:.2f}".format(df_xg[items].mean(axis=0))}")
-#     print(f" Std dev of XGBoost {items}: {"{:.2f}".format(df_xg[items].std(axis=0))}")
-# lists_lr = df_lr.columns
-# for items in lists_lr:
-#     print(f" Mean of Logistic Regression {items}: {"{:.2f}".format(df_lr[items].mean(axis=0))}")
-#     print(f" Std dev of Logistic Regression {items}: {"{:.2f}".format(df_lr[items].std(axis=0))}")
-# lists_rf = df_rf.columns
-# for items in lists_rf:
-#     print(f" Mean of Random Forest {items}: {"{:.2f}".format(df_rf[items].mean(axis=0))}")
-#     print(f" Std dev of Random Forest {items}: {"{:.2f}".format(df_rf[items].std(axis=0))}")
-# lists_sv = df_sv.columns
-# for items in lists_sv:
-#     print(f" Mean of Support Vector Machine {items}: {"{:.2f}".format(df_sv[items].mean(axis=0))}")
-#     print(f" Std dev of Support Vector Machine {items}: {"{:.2f}".format(df_sv[items].std(axis=0))}")
+
+lists_xg = df_xg.columns
+for items in lists_xg:
+    print(f" Mean of XGBoost {items}: {df_xg[items].mean(axis=0)}")
+    print(f" Std dev of XGBoost {items}: {df_xg[items].std(axis=0)}")
+lists_lr = df_lr.columns
+for items in lists_lr:
+    print(f" Mean of Logistic Regression {items}: {df_lr[items].mean(axis=0)}")
+    print(f" Std dev of Logistic Regression {items}: {df_lr[items].std(axis=0)}")
+lists_rf = df_rf.columns
+for items in lists_rf:
+    print(f" Mean of Random Forest {items}: {df_rf[items].mean(axis=0)}")
+    print(f" Std dev of Random Forest {items}: {df_rf[items].std(axis=0)}")
+lists_sv = df_sv.columns
+for items in lists_sv:
+    print(f" Mean of Support Vector Machine {items}: {df_sv[items].mean(axis=0)}")
+    print(f" Std dev of Support Vector Machine {items}: {df_sv[items].std(axis=0)}")
