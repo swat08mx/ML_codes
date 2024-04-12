@@ -25,17 +25,21 @@ for i in range(len(data1['A/C'])):
 data1.drop(['A/C', 'Sample_ID'], axis=1, inplace=True)
 temp = pd.DataFrame(temp, columns=['labels'])
 X_train, X_test, y_train, y_test = train_test_split(data1, temp, test_size=0.3, shuffle=True)
-
-lasso = Lasso()
-
+params = {"alpha":np.arange(0.00001, 0.01, 0.001)}
+kf=KFold(n_splits=5,shuffle=True, random_state=42)
+lasso = Lasso(max_iter=100000)
+lasso_cv=GridSearchCV(lasso, param_grid=params, cv=kf)
+lasso_cv.fit(data1, temp)
+print("Best Params {}".format(lasso_cv.best_params_))
+alp = lasso_cv.best_params_
+value = alp['alpha']
 names = data1.columns
 print("Column Names: {}".format(names.values))
 
-lasso1 = Lasso(alpha=0.00901)
+lasso1 = Lasso(alpha=value)
 lasso1.fit(X_train, y_train)
 lasso1_coef = np.abs(lasso1.coef_)
 lists = lasso1_coef.tolist()
-print(min(lists))
 print(statistics.median(lists))
 median = statistics.median(lists)
 print(lasso1_coef)
