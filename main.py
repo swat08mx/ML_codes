@@ -146,7 +146,7 @@ for i, (train_index, test_index) in tqdm(enumerate(kf.split(df_new))):
     X_test = sc.transform(X_test)
 
     print("XGBoost")
-    model_xg = XGBClassifier(learning_rate=0.05, device='gpu', objective='binary:logistic')
+    model_xg = XGBClassifier(device='gpu', booster='dart', objective='binary:logistic')
     model_xg.fit(X_train, y_train.values.ravel())
     pred_prob_xg = model_xg.predict_proba(X_test)[:, 1]
     pred_xg = model_xg.predict(X_test)
