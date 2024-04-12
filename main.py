@@ -25,18 +25,13 @@ for i in range(len(data1['A/C'])):
 data1.drop(['A/C', 'Sample_ID'], axis=1, inplace=True)
 temp = pd.DataFrame(temp, columns=['labels'])
 X_train, X_test, y_train, y_test = train_test_split(data1, temp, test_size=0.3, shuffle=True)
-# params = {"alpha":np.arange(0.00001, 0.25, 10)}
-# kf=KFold(n_splits=5,shuffle=True, random_state=42)
+
 lasso = Lasso()
-# lasso_cv=GridSearchCV(lasso, param_grid=params, cv=kf)
-# lasso_cv.fit(data1, temp)
-# print("Best Params {}".format(lasso_cv.best_params_))
 
 names = data1.columns
 print("Column Names: {}".format(names.values))
 
-
-lasso1 = Lasso(alpha=0.001)
+lasso1 = Lasso(alpha=0.00901)
 lasso1.fit(X_train, y_train)
 lasso1_coef = np.abs(lasso1.coef_)
 lists = lasso1_coef.tolist()
@@ -45,11 +40,11 @@ print(statistics.median(lists))
 median = statistics.median(lists)
 print(lasso1_coef)
 
-feature_subset=np.array(names)[lasso1_coef>0.001]
+feature_subset=np.array(names)[lasso1_coef>median]
 print("Selected Feature Columns: {}".format(feature_subset))
 
 df_new = data1[feature_subset]
-
+print(f"Number of genes selected at last is : {len(feature_subset)}")
 
 def sensitivity(pred, y_test):
     tp = 0
