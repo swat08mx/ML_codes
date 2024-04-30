@@ -2,54 +2,18 @@ import pandas as pd
 from xgboost import XGBClassifier
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import KFold
 from sklearn import metrics, svm
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
-from sklearn import metrics
-import statistics
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-import numpy as np
-from sklearn.linear_model import LinearRegression, Ridge, Lasso
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import GridSearchCV, KFold
+from sklearn.model_selection import KFold
 
-data1 = pd.read_csv("/content/drive/MyDrive/final_data.csv")
-temp = []
-for i in range(len(data1['A/C'])):
-    if data1['A/C'][i] == 'A':
-        temp.append(1)
-    else:
-        temp.append(0)
-data1.drop(['A/C', 'Sample_ID'], axis=1, inplace=True)
-temp = pd.DataFrame(temp, columns=['labels'])
-X_train, X_test, y_train, y_test = train_test_split(data1, temp, test_size=0.3, shuffle=True)
-params = {"alpha":np.arange(0.00001, 0.01, 0.001)}
-kf=KFold(n_splits=5,shuffle=True, random_state=42)
-lasso = Lasso(max_iter=100000)
-lasso_cv=GridSearchCV(lasso, param_grid=params, cv=kf)
-lasso_cv.fit(data1, temp)
-print("Best Params {}".format(lasso_cv.best_params_))
-alp = lasso_cv.best_params_
-value = alp['alpha']
-names = data1.columns
-print("Column Names: {}".format(names.values))
+data1 = pd.read_csv("gxp_dataset.csv")
+data = pd.read_csv("lasso_dataset.csv")
 
-lasso1 = Lasso(alpha=value)
-lasso1.fit(X_train, y_train)
-lasso1_coef = np.abs(lasso1.coef_)
-lists = lasso1_coef.tolist()
-print(statistics.median(lists))
-median = statistics.median(lists)
-print(lasso1_coef)
-
-feature_subset=np.array(names)[lasso1_coef>median]
-print("Selected Feature Columns: {}".format(feature_subset))
-
-df_new = data1[feature_subset]
-print(f"Number of genes selected at last is : {len(feature_subset)}")
-
+temp = pd.DataFrame(data1['label'].to_list(), columns=['labels'])
+X_train, X_test, y_train, y_test = train_test_split(data, temp, test_size=0.3, shuffle=True)
 def sensitivity(pred, y_test):
     tp = 0
     fn = 0
@@ -64,7 +28,7 @@ def sensitivity(pred, y_test):
             tn += 1
         elif pred[i] == 1 and y_test[i] == 0:
             fp += 1
-    sensitivity_val = (tp / (tp + fn))*100
+    sensitivity_val = (tp / (tp + fn))
     return sensitivity_val
 def specificity(pred, y_test):
     tp = 0
@@ -80,7 +44,7 @@ def specificity(pred, y_test):
             tn += 1
         elif pred[i] == 1 and y_test[i] == 0:
             fp += 1
-    specificity_val = (tn / (tn + fp))*100
+    specificity_val = (tn / (tn + fp))
     return specificity_val
 def accuracy(y_test, pred):
     accuracy_val = metrics.accuracy_score(y_test, pred)
@@ -105,7 +69,7 @@ def ppv(pred, y_test):
             tn += 1
         elif pred[i] == 1 and y_test[i] == 0:
             fp += 1
-    ppv_val = (tp / (tp + fp))*100
+    ppv_val = (tp / (tp + fp))
     return ppv_val
 def npv(pred, y_test):
     tp = 0
@@ -121,7 +85,7 @@ def npv(pred, y_test):
             tn += 1
         elif pred[i] == 1 and y_test[i] == 0:
             fp += 1
-    npv_val = (tn / (tn + fn))*100
+    npv_val = (tn / (tn + fn))
     return npv_val
 def f1(y_test, pred):
     f1_val = metrics.f1_score(y_test_temp, pred)
@@ -133,10 +97,10 @@ sensit_rf, specif_rf, accu_rf, prec_rf, auc_list_rf, ppv_list_rf, npv_list_rf, f
 sensit_sv, specif_sv, accu_sv, prec_sv, auc_list_sv, ppv_list_sv, npv_list_sv, f1_sv = ([] for i in range(8))
 
 kf = KFold(10, shuffle=True)
-for i, (train_index, test_index) in tqdm(enumerate(kf.split(df_new))):
+for i, (train_index, test_index) in tqdm(enumerate(kf.split(data1))):
     print(f"Fold {i}")
-    X_train = df_new.iloc[train_index, :]
-    X_test = df_new.iloc[test_index, :]
+    X_train = data.iloc[train_index, :]
+    X_test = data.iloc[test_index, :]
     y_train = temp.iloc[train_index]
     y_test = temp.iloc[test_index]
     y_test_temp = y_test['labels'].to_list()
@@ -145,13 +109,14 @@ for i, (train_index, test_index) in tqdm(enumerate(kf.split(df_new))):
     X_test = sc.transform(X_test)
 
     print("XGBoost")
-    model_xg = XGBClassifier(device='gpu', booster='dart', objective='binary:logistic')
+    k='XGBoost'
+    model_xg = XGBClassifier(learning_rate=0.05, device='gpu', objective='binary:logistic')
     model_xg.fit(X_train, y_train.values.ravel())
     pred_prob_xg = model_xg.predict_proba(X_test)[:, 1]
     pred_xg = model_xg.predict(X_test)
     fpr, tpr, _ = metrics.roc_curve(y_test_temp, pred_prob_xg)
     plt.title(f"ROC curve")
-    plt.plot(fpr, tpr, label=f'Fold {i}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_xg))}')
+    plt.plot(fpr, tpr, label=f'{k}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_xg))}')
     plt.legend()
     sensit_xg.append(float("{:.2f}".format(sensitivity(pred_xg, y_test_temp))))
     specif_xg.append(float("{:.2f}".format(specificity(pred_xg, y_test_temp))))
@@ -163,13 +128,14 @@ for i, (train_index, test_index) in tqdm(enumerate(kf.split(df_new))):
     f1_xg.append(float("{:.2f}".format(f1(y_test_temp, pred_xg))))
 
     print("Logistic Regression")
+    k='Logistic Regression'
     model_lr = LogisticRegression(max_iter=2000)
     model_lr.fit(X_train, y_train.values.ravel())
     pred_prob_lr = model_lr.predict_proba(X_test)[:, 1]
     pred_lr = model_lr.predict(X_test)
     fpr, tpr, _ = metrics.roc_curve(y_test_temp, pred_prob_lr)
     plt.title(f"ROC curve")
-    plt.plot(fpr, tpr, label=f'Fold {i}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_lr))}')
+    plt.plot(fpr, tpr, label=f'{k}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_lr))}')
     plt.legend()
     sensit_lr.append(float("{:.2f}".format(sensitivity(pred_lr, y_test_temp))))
     specif_lr.append(float("{:.2f}".format(specificity(pred_lr, y_test_temp))))
@@ -181,13 +147,14 @@ for i, (train_index, test_index) in tqdm(enumerate(kf.split(df_new))):
     f1_lr.append(float("{:.2f}".format(f1(y_test_temp, pred_lr))))
 
     print("Random Forest")
+    k='Random Forest'
     model_rf = RandomForestClassifier(n_estimators=2000)
     model_rf.fit(X_train, y_train.values.ravel())
     pred_prob_rf = model_rf.predict_proba(X_test)[:, 1]
     pred_rf = model_rf.predict(X_test)
     fpr, tpr, _ = metrics.roc_curve(y_test_temp, pred_prob_rf)
     plt.title(f"ROC curve")
-    plt.plot(fpr, tpr, label=f'Fold {i}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_rf))}')
+    plt.plot(fpr, tpr, label=f'{k}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_rf))}')
     plt.legend()
     sensit_rf.append(float("{:.2f}".format(sensitivity(pred_rf, y_test_temp))))
     specif_rf.append(float("{:.2f}".format(specificity(pred_rf, y_test_temp))))
@@ -199,14 +166,16 @@ for i, (train_index, test_index) in tqdm(enumerate(kf.split(df_new))):
     f1_rf.append(float("{:.2f}".format(f1(y_test_temp, pred_rf))))
 
     print("Support Vector Machine")
+    k='SVM'
     model_sv = svm.SVC(probability=True, kernel='linear')
     model_sv.fit(X_train, y_train.values.ravel())
     pred_prob_sv = model_sv.predict_proba(X_test)[:, 1]
     pred_sv = model_sv.predict(X_test)
     fpr, tpr, _ = metrics.roc_curve(y_test_temp, pred_prob_sv)
     plt.title(f"ROC curve")
-    plt.plot(fpr, tpr, label=f'Fold {i}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_sv))}')
+    plt.plot(fpr, tpr, label=f'{k}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_sv))}')
     plt.legend()
+    plt.plot()
     sensit_sv.append(float("{:.2f}".format(sensitivity(pred_sv, y_test_temp))))
     specif_sv.append(float("{:.2f}".format(specificity(pred_sv, y_test_temp))))
     accu_sv.append(float("{:.2f}".format(accuracy(y_test_temp, pred_lr))))
@@ -233,18 +202,35 @@ print(df_sv)
 
 
 lists_xg = df_xg.columns
+xg_mean=[]
+xg_std=[]
 for items in lists_xg:
-    print(f" Mean of XGBoost {items}: {df_xg[items].mean(axis=0)}")
-    print(f" Std dev of XGBoost {items}: {df_xg[items].std(axis=0)}")
+    xg_mean.append(df_xg[items].mean(axis=0))
+    xg_std.append(df_xg[items].std(axis=0))
 lists_lr = df_lr.columns
+lr_mean=[]
+lr_std=[]
 for items in lists_lr:
-    print(f" Mean of Logistic Regression {items}: {df_lr[items].mean(axis=0)}")
-    print(f" Std dev of Logistic Regression {items}: {df_lr[items].std(axis=0)}")
+    lr_mean.append(df_lr[items].mean(axis=0))
+    lr_std.append(df_lr[items].std(axis=0))
 lists_rf = df_rf.columns
+rf_mean=[]
+rf_std=[]
 for items in lists_rf:
-    print(f" Mean of Random Forest {items}: {df_rf[items].mean(axis=0)}")
-    print(f" Std dev of Random Forest {items}: {df_rf[items].std(axis=0)}")
+    rf_mean.append(df_rf[items].mean(axis=0))
+    rf_std.append(df_rf[items].std(axis=0))
 lists_sv = df_sv.columns
+sv_mean=[]
+sv_std=[]
 for items in lists_sv:
-    print(f" Mean of Support Vector Machine {items}: {df_sv[items].mean(axis=0)}")
-    print(f" Std dev of Support Vector Machine {items}: {df_sv[items].std(axis=0)}")
+    sv_mean.append(df_sv[items].mean(axis=0))
+    sv_std.append(df_sv[items].std(axis=0))
+
+dict_mean = {'XGBoost':xg_mean, 'Logistic Regression':lr_mean, 'Random Forest': rf_mean, 'SVM':sv_mean}
+dict_std = {'XGBoost':xg_std, 'Logistic Regression':lr_std, 'Random Forest': rf_std, 'SVM':sv_std}
+
+df_mean = pd.DataFrame(dict_mean)
+df_std = pd.DataFrame(dict_std)
+print(df_mean)
+print(df_std)
+
