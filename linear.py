@@ -78,10 +78,6 @@ for i in range(10):
       def __init__(self):
           super().__init__()
           self.layer_stack = nn.Sequential(
-            #   nn.Linear(187, 400),
-            #   nn.ReLU(),
-            #   nn.Linear(400, 200),
-            #   nn.ReLU(),
               nn.Linear(187, 100),
               nn.ReLU(),
               nn.Dropout(0.8),

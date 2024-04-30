@@ -14,7 +14,7 @@ data1 = pd.read_csv("gxp_dataset.csv")
 data = pd.read_csv("lasso_dataset.csv")
 
 temp = pd.DataFrame(data1['label'].to_list(), columns=['labels'])
-X_train, X_test, y_train, y_test = train_test_split(data, temp, random_state=2, test_size=0.2, shuffle=True)
+X_train, X_test, y_train, y_test = train_test_split(data, temp, random_state=2, test_size=0.3)
 # def sensitivity(pred, y_test):
 #     tp = 0
 #     fn = 0
