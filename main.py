@@ -17,7 +17,7 @@ from sklearn import svm
 
 
 data1 = pd.read_csv("gxp_dataset.csv")
-data = pd.read_csv("lasso_big_dataset.csv")
+data = pd.read_csv("lasso_dataset.csv")
 temp = pd.DataFrame(data1['label'].to_list(), columns=['labels'])
 
 # data1.drop(['label', 'Sample_ID'], axis=1, inplace=True)
@@ -264,9 +264,6 @@ print(df_lr)
 #print(df_rf)
 #print(df_sv)
 
-
-
-
 # lists_xg = df_xg.columns
 # xg_mean=[]
 # xg_std=[]
@@ -301,8 +298,6 @@ dict_mean = {'Logistic Regression':lr_mean}
 dict_std = {'Logistic Regression':lr_std}
 
 
-
-
 df_mean = pd.DataFrame(dict_mean)
 df_std = pd.DataFrame(dict_std)
 print(df_mean)
@@ -315,6 +310,8 @@ plt.xlabel('Actual', fontsize=13)
 plt.title("Confusion Matrix for Logistic regression", fontsize=17)
 plt.show()
 fig2.savefig('Confusion_matrix.png', bbox_inches='tight')
+
+##Machine heavy code below ------ add comment after running ------
 explainer = shap.KernelExplainer(model_lr.predict, X_train, feature_names=data.columns)
 shap_values = explainer(X_test)
 fig3 = plt.figure()
