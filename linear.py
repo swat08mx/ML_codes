@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 import shap
 
 data1 = pd.read_csv("gxp_dataset.csv")
-df_new = pd.read_csv("lasso_dataset.csv")
+df_new = pd.read_csv("lasso_big_dataset.csv")
 temp = pd.DataFrame(data1['label'].to_list(), columns=['labels'])
 
 if torch.cuda.is_available():
@@ -26,7 +26,7 @@ else:
 
 vals=[]
 temp = pd.DataFrame(temp, columns=['labels'])
-X_train, X_test, y_train, y_test = train_test_split(df_new, temp, random_state=20, test_size=0.3)
+X_train, X_test, y_train, y_test = train_test_split(df_new, temp, random_state=11, test_size=0.3)
 sc = StandardScaler()
 X_train = sc.fit_transform(X_train)
 X_test = sc.transform(X_test)
@@ -39,15 +39,19 @@ train_set = TensorDataset(X_train_tensor, y_train_tensor)
 test_set = TensorDataset(X_test_tensor, y_test_tensor)
 
 train_loader = DataLoader(train_set, batch_size=32)
-test_loader = DataLoader(test_set, batch_size=1, shuffle=True)
+test_loader = DataLoader(test_set, batch_size=1)
 
 class Network(nn.Module):
     def __init__(self):
         super().__init__()
         self.layer_stack = nn.Sequential(
-            nn.Linear(187, 100),
+            nn.Linear(835, 400),
             nn.ReLU(),
             nn.Dropout(0.8),
+            nn.Linear(400, 200),
+            nn.ReLU(),
+            nn.Linear(200, 100),
+            nn.ReLU(),
             nn.Linear(100, 50),
             nn.ReLU(),
             nn.Linear(50, 20),
@@ -86,7 +90,7 @@ model.to(device)
 #     for i in range(len(running_loss)): total+=running_loss[i]
 #     loss_val.append(total/len(running_loss))
 #     print(f"Loss: {total/len(running_loss)}")
-
+#
 # PATH="model.pth"
 # torch.save(model.state_dict(), PATH)
 
@@ -127,12 +131,12 @@ for j in range(len(var_new)):
   for k in range(len(var[j])):
     label_new.append(var_new[j][0])
 
-background = X_train[np.random.choice(X_train.shape[0], 100, replace=False)]
-background = torch.Tensor(background)
-explainer = shap.DeepExplainer(model, background)
-shap_values = explainer.shap_values(torch.Tensor(X_test))
-shap.plots.beeswarm(shap_values)
-plt.show()
+# background = X_train[np.random.choice(X_train.shape[0], 100, replace=False)]
+# background = torch.Tensor(background)
+# explainer = shap.DeepExplainer(model, background)
+# shap_values = explainer.shap_values(torch.Tensor(X_test))
+# shap.plots.beeswarm(shap_values)
+# plt.show()
 
 
 cm = confusion_matrix(label_new, pred_new)
