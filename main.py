@@ -11,13 +11,42 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import KFold
 import shap
+import numpy as np
+from sklearn.linear_model import Lasso
 from sklearn import svm
 
 
 data1 = pd.read_csv("gxp_dataset.csv")
-data = pd.read_csv("lasso_dataset.csv")
+data = pd.read_csv("lasso_big_dataset.csv")
 temp = pd.DataFrame(data1['label'].to_list(), columns=['labels'])
 
+# data1.drop(['label', 'Sample_ID'], axis=1, inplace=True)
+# names = data1.columns
+# import statistics
+# import torch
+# X_train, X_test, y_train, y_test = train_test_split(data1, temps, test_size=0.3, random_state=22)
+# sc = StandardScaler()
+# print(y_train)
+# X_train = sc.fit_transform(X_train)
+# X_test = sc.transform(X_test)
+# X_train_tensor = torch.tensor(X_train)
+# X_test_tensor = torch.tensor(X_test)
+# y_train_tensor = torch.tensor(y_train)
+# y_test_tensor = torch.tensor(y_test)
+# # calling the model with the best parameter
+# lasso1 = Lasso(alpha=0.00001, max_iter=10000)
+# lasso1.fit(X_train_tensor, y_train_tensor)
+# lasso1_coef = np.abs(lasso1.coef_)
+#
+# lists = lasso1_coef.tolist()
+# print(min(lists))
+# print(statistics.median(lists))
+# median = statistics.median(lists)
+# feature_subset=np.array(names)[lasso1_coef>median]
+# print(len(feature_subset))
+# df_new = data1[feature_subset]
+#
+# df_new.to_csv("lasso_big_dataset.csv", index=False)
 
 def sensitivity(pred, y_test):
    tp = 0
@@ -145,6 +174,7 @@ for i, (train_index, test_index) in tqdm(enumerate(zip(training, testing))):
    # ppv_list_xg.append(float("{:.2f}".format(ppv(pred_xg, y_test_temp))))
    # npv_list_xg.append(float("{:.2f}".format(npv(pred_xg, y_test_temp))))
    # f1_xg.append(float("{:.2f}".format(f1(y_test_temp, pred_xg))))
+
    print("Logistic Regression")
    #k='Logistic Regression'
    model_lr = LogisticRegression(max_iter=2000)
@@ -285,14 +315,14 @@ plt.xlabel('Actual', fontsize=13)
 plt.title("Confusion Matrix for Logistic regression", fontsize=17)
 plt.show()
 fig2.savefig('Confusion_matrix.png', bbox_inches='tight')
-explainer = shap.Explainer(model_lr, data)
-shap_values = explainer(data)
+explainer = shap.KernelExplainer(model_lr.predict, X_train, feature_names=data.columns)
+shap_values = explainer(X_test)
 fig3 = plt.figure()
 shap.plots.beeswarm(shap_values)
 plt.show()
 fig3.savefig('beeswarm_plot.png', bbox_inches='tight')
 fig4 = plt.figure()
-shap.summary_plot(shap_values, data)
+shap.summary_plot(shap_values, X_test)
 plt.show()
 fig4.savefig('Summary_plot.png', bbox_inches='tight')
 fig5 = plt.figure()

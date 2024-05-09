@@ -6,13 +6,14 @@ from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 from torch import nn
 import pandas as pd
+import numpy as np
 import pandas as pd
 import sklearn.metrics as metrics
 from sklearn.metrics import confusion_matrix, roc_curve, f1_score
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-
+import shap
 
 data1 = pd.read_csv("gxp_dataset.csv")
 df_new = pd.read_csv("lasso_dataset.csv")
@@ -125,6 +126,14 @@ label_new=[]
 for j in range(len(var_new)):
   for k in range(len(var[j])):
     label_new.append(var_new[j][0])
+
+background = X_train[np.random.choice(X_train.shape[0], 100, replace=False)]
+background = torch.Tensor(background)
+explainer = shap.DeepExplainer(model, background)
+shap_values = explainer.shap_values(torch.Tensor(X_test))
+shap.plots.beeswarm(shap_values)
+plt.show()
+
 
 cm = confusion_matrix(label_new, pred_new)
 sns.heatmap(cm, annot=True, fmt='g', xticklabels=['Autism', 'Control'], yticklabels=['Autism', 'Control'])
