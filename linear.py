@@ -26,7 +26,7 @@ else:
 
 vals=[]
 temp = pd.DataFrame(temp, columns=['labels'])
-X_train, X_test, y_train, y_test = train_test_split(df_new, temp, random_state=11, test_size=0.3)
+X_train, X_test, y_train, y_test = train_test_split(df_new, temp, random_state=34, test_size=0.3)
 sc = StandardScaler()
 X_train = sc.fit_transform(X_train)
 X_test = sc.transform(X_test)
@@ -90,11 +90,11 @@ model.to(device)
 #     for i in range(len(running_loss)): total+=running_loss[i]
 #     loss_val.append(total/len(running_loss))
 #     print(f"Loss: {total/len(running_loss)}")
-#
-# PATH="model.pth"
+
+# PATH="model1.pth"
 # torch.save(model.state_dict(), PATH)
 
-model.load_state_dict(torch.load('model.pth'))
+model.load_state_dict(torch.load('model1.pth'))
 model.eval()
 correct = 0
 total = 0
