@@ -19,7 +19,7 @@ if torch.cuda.is_available():
     device = "cuda:0"
 else:
     device = "cpu"
-# device = torch.device("cpu")
+#device = torch.device("cpu")
 print(device)
 data1 = pd.read_csv("final_data.csv")
 temp = []
@@ -35,15 +35,15 @@ final=data1
 vector=[]
 for i in range(len(final)):
   vector.append(final.iloc[i].tolist())
-X_train, X_test = train_test_split(vector, test_size=0.3, shuffle=True)
+X_train, X_test = train_test_split(vector, test_size=0.3)
 X_train_tensor = torch.tensor(X_train)
 X_test_tensor = torch.tensor(X_test)
 
 train_set = TensorDataset(X_train_tensor)
 test_set = TensorDataset(X_test_tensor)
 
-train_loader = DataLoader(train_set, batch_size=10)
-test_loader = DataLoader(test_set, batch_size=10)
+train_loader = DataLoader(train_set, batch_size=2)
+test_loader = DataLoader(test_set, batch_size=2)
 
 class TransformerModel(nn.Module):
 
@@ -93,10 +93,10 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 ntokens = 18836  # size of vocabulary
-emsize = 200  # embedding dimension
-d_hid = 200  # dimension of the feedforward network model in ``nn.TransformerEncoder``
-nlayers = 2  # number of ``nn.TransformerEncoderLayer`` in ``nn.TransformerEncoder``
-nhead = 2  # number of heads in ``nn.MultiheadAttention``
+emsize = 1000  # embedding dimension
+d_hid = 1000  # dimension of the feedforward network model in ``nn.TransformerEncoder``
+nlayers = 5  # number of ``nn.TransformerEncoderLayer`` in ``nn.TransformerEncoder``
+nhead = 5  # number of heads in ``nn.MultiheadAttention``
 dropout = 0.2  # dropout probability
 model = TransformerModel(ntokens, emsize, nhead, d_hid, nlayers, dropout).to(device)
 
