@@ -35,7 +35,7 @@ final = final[:-7]
 temp = temp[:-7]
 
 vals = []
-for i in range(1):
+for i in range(10):
     temp = pd.DataFrame(temp, columns=['labels'])
     X_train, X_test, y_train, y_test = train_test_split(final, temp, test_size=0.3, shuffle=True)
     sc = StandardScaler()
