@@ -47,7 +47,7 @@ target = ['NAT1', 'SPATA41', 'FER1L6-AS1', 'HLA-DPB2', 'EBLN1', 'ANKRD30BL', 'CT
 # corr = data1[np.append(c2_features ,c3_features)].corr()
 
 corre = data1[target].corr()
-
+print(corre)
 plt.figure(figsize=(12, 8)), sns.heatmap(corre,annot=True, cmap='coolwarm',linewidths=0.5, fmt=".1f",annot_kws={"size": 5}, vmin=-1, vmax=1)
 #plt.title(f'Cluster {one} and {two}')
 plt.show()
