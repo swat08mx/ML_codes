@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, StratifiedKFold
 import shap
 import numpy as np
 from sklearn.linear_model import Lasso
@@ -132,28 +132,44 @@ sensit_rf, specif_rf, accu_rf, prec_rf, auc_list_rf, ppv_list_rf, npv_list_rf, f
 sensit_sv, specif_sv, accu_sv, prec_sv, auc_list_sv, ppv_list_sv, npv_list_sv, f1_sv = ([] for i in range(8))
 
 
-CV = KFold(n_splits=10, shuffle=True, random_state=42)
+# CV = KFold(n_splits=10, shuffle=True, random_state=42)
+CV = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
+
+# training, testing = [], []
+# for fold in CV.split(data):
+#    training.append(fold[0]), testing.append(fold[1])
 
 
-training, testing = [], []
-for fold in CV.split(data):
-   training.append(fold[0]), testing.append(fold[1])
-
+## implementation with normal k fold
 preds=[]
 actual=[]
 preds_prob=[]
 fig1 = plt.figure()
-for i, (train_index, test_index) in tqdm(enumerate(zip(training, testing))):
-   print(f"Fold {i}")
-   X_train = data.iloc[train_index, :]
-   X_test = data.iloc[test_index, :]
-   y_train = temp.iloc[train_index]
-   y_test = temp.iloc[test_index]
-   y_test_temp = y_test['labels'].to_list()
-   sc = StandardScaler()
-   X_train = sc.fit_transform(X_train)
-   X_test = sc.transform(X_test)
+# for i, (train_index, test_index) in tqdm(enumerate(zip(training, testing))):
+#    print(f"Fold {i}")
+#    X_train = data.iloc[train_index, :]
+#    X_test = data.iloc[test_index, :]
+#    y_train = temp.iloc[train_index]
+#    y_test = temp.iloc[test_index]
+#    y_test_temp = y_test['labels'].to_list()
+#    sc = StandardScaler()
+#    X_train = sc.fit_transform(X_train)
+#    X_test = sc.transform(X_test)
 
+
+
+## implementation with new stratified k fold
+for i, (train_index, test_index) in enumerate(CV.split(data, temp)):
+   print(train_index)
+   print(test_index)
+   x_train_fold, x_test_fold = data.iloc[train_index, :], data.iloc[test_index, :]
+   y_train_fold, y_test_fold = temp.iloc[train_index], temp.iloc[test_index]
+   sc = StandardScaler()
+   X_train = sc.fit_transform(x_train_fold)
+   X_test = sc.transform(x_test_fold)
+   y_train = y_train_fold
+   y_test = y_test_fold
+   y_test_temp = y_test['labels'].to_list()
 
    # print("XGBoost")
    # k='XGBoost'
@@ -187,31 +203,31 @@ for i, (train_index, test_index) in tqdm(enumerate(zip(training, testing))):
    for values in y_test_temp:
        actual.append(values)
 
-   precision_sc, recall, thresholds = precision_recall_curve(actual, preds_prob)
-   auc_score = metrics.auc(recall, precision_sc)
-   plt.figure(figsize=(8, 6))
-   plt.plot(recall, precision_sc, label=f'Precision-Recall Curve (AUC = {auc_score:.2f})')
-   plt.xlabel('Recall')
-   plt.ylabel('Precision')
-   plt.title('Precision-Recall Curve')
-   plt.legend()
-   plt.show()
+   # precision_sc, recall, thresholds = precision_recall_curve(actual, preds_prob)
+   # auc_score = metrics.auc(recall, precision_sc)
+   # plt.figure(figsize=(8, 6))
+   # plt.plot(recall, precision_sc, label=f'Precision-Recall Curve {i} (AUC = {auc_score:.2f})')
+   # plt.xlabel('Recall')
+   # plt.ylabel('Precision')
+   # plt.title('Precision-Recall Curve')
+   # plt.legend()
+   # plt.show()
 
-   fig2 = plt.figure()
-   cm = confusion_matrix(y_test_temp, pred_lr)
-   sns.heatmap(cm, annot=True, fmt='g', xticklabels=['Autism', 'Control'], yticklabels=['Autism', 'Control'])
-   plt.ylabel('Prediction', fontsize=13)
-   plt.xlabel('Actual', fontsize=13)
-   plt.title("Confusion Matrix for Logistic regression", fontsize=17)
-   plt.show()
-
-   fpr, tpr, _ = metrics.roc_curve(y_test_temp, pred_prob_lr)
-   plt.title(f"ROC curve for Logistic regression")
-   plt.plot(fpr, tpr, label=f'ROC Curve (AUC = {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_lr))})')
-   plt.xlabel('False positive rate', fontsize=13)
-   plt.ylabel('True positive rate', fontsize=13)
-   plt.legend(loc='lower right')
-   plt.show()
+   # fig2 = plt.figure()
+   # cm = confusion_matrix(y_test_temp, pred_lr)
+   # sns.heatmap(cm, annot=True, fmt='g', xticklabels=['Autism', 'Control'], yticklabels=['Autism', 'Control'])
+   # plt.ylabel('Prediction', fontsize=13)
+   # plt.xlabel('Actual', fontsize=13)
+   # plt.title(f"Confusion Matrix for Logistic regression {i}", fontsize=17)
+   # plt.show()
+   #
+   # fpr, tpr, _ = metrics.roc_curve(y_test_temp, pred_prob_lr)
+   # plt.title(f"ROC curve for Logistic regression")
+   # plt.plot(fpr, tpr, label=f'ROC Curve {i}(AUC = {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_lr))})')
+   # plt.xlabel('False positive rate', fontsize=13)
+   # plt.ylabel('True positive rate', fontsize=13)
+   # plt.legend(loc='lower right')
+   # plt.show()
 
    sensit_lr.append(float("{:.2f}".format(sensitivity(pred_lr, y_test_temp))))
    specif_lr.append(float("{:.2f}".format(specificity(pred_lr, y_test_temp))))
@@ -332,43 +348,43 @@ print(df_std)
 # plt.legend()
 # plt.show()
 
-# fig2 = plt.figure()
-# cm = confusion_matrix(y_test_temp, pred_lr)
-# sns.heatmap(cm, annot=True, fmt='g', xticklabels=['Autism', 'Control'], yticklabels=['Autism', 'Control'])
-# plt.ylabel('Prediction', fontsize=13)
-# plt.xlabel('Actual', fontsize=13)
-# plt.title("Confusion Matrix for Logistic regression", fontsize=17)
-# plt.show()
-
-#fig2.savefig('Confusion_matrix.png', bbox_inches='tight')
-#
-# ##Machine heavy code below ------ add comment after running ------
-# explainer = shap.KernelExplainer(model_lr.predict, X_train, feature_names=data.columns)
-# shap_values = explainer(X_test)
-# fig3 = plt.figure()
-# shap.plots.beeswarm(shap_values)
-# plt.show()
-# #fig3.savefig('beeswarm_plot.png', bbox_inches='tight')
-# fig4 = plt.figure()
-# shap.summary_plot(shap_values, X_test)
-# plt.show()
-# #fig4.savefig('Summary_plot.png', bbox_inches='tight')
-# fig5 = plt.figure()
-# shap.plots.heatmap(shap_values, max_display=12)
-# plt.show()
-# #fig5.savefig('Heatmap.png', bbox_inches='tight')
-# fig6 = plt.figure()
-# shap.plots.waterfall(shap_values[0])
-# plt.show()
-# #fig6.savefig('Waterfall_plot.png', bbox_inches='tight')
-# plt7 = plt.figure()
-precision, recall, thresholds = precision_recall_curve(actual, preds_prob)
-auc_score = metrics.auc(recall, precision)
-plt.figure(figsize=(8, 6))
-plt.plot(recall, precision, label=f'Precision-Recall Curve (AUC = {auc_score:.2f})')
-plt.xlabel('Recall')
-plt.ylabel('Precision')
-plt.title('Precision-Recall Curve')
-plt.legend()
+fig2 = plt.figure()
+cm = confusion_matrix(y_test_temp, pred_lr)
+sns.heatmap(cm, annot=True, fmt='g', xticklabels=['Autism', 'Control'], yticklabels=['Autism', 'Control'])
+plt.ylabel('Prediction', fontsize=13)
+plt.xlabel('Actual', fontsize=13)
+plt.title("Confusion Matrix for Logistic regression", fontsize=17)
 plt.show()
+
+fig2.savefig('Confusion_matrix.png', bbox_inches='tight')
+
+##Machine heavy code below ------ add comment after running ------
+explainer = shap.KernelExplainer(model_lr.predict, X_train, feature_names=data.columns)
+shap_values = explainer(X_test)
+fig3 = plt.figure()
+shap.plots.beeswarm(shap_values)
+plt.show()
+#fig3.savefig('beeswarm_plot.png', bbox_inches='tight')
+fig4 = plt.figure()
+shap.summary_plot(shap_values, X_test)
+plt.show()
+#fig4.savefig('Summary_plot.png', bbox_inches='tight')
+fig5 = plt.figure()
+shap.plots.heatmap(shap_values, max_display=12)
+plt.show()
+#fig5.savefig('Heatmap.png', bbox_inches='tight')
+fig6 = plt.figure()
+shap.plots.waterfall(shap_values[0])
+plt.show()
+#fig6.savefig('Waterfall_plot.png', bbox_inches='tight')
+# plt7 = plt.figure()
+# precision, recall, thresholds = precision_recall_curve(actual, preds_prob)
+# auc_score = metrics.auc(recall, precision)
+# plt.figure(figsize=(8, 6))
+# plt.plot(recall, precision, label=f'Precision-Recall Curve (AUC = {auc_score:.2f})')
+# plt.xlabel('Recall')
+# plt.ylabel('Precision')
+# plt.title('Precision-Recall Curve')
+# plt.legend()
+# plt.show()
 # #plt7.savefig('PR_curve.png', bbox_inches='tight')

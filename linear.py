@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import pandas as pd
 import sklearn.metrics as metrics
-from sklearn.metrics import confusion_matrix, roc_curve, f1_score, precision_recall_curve
+from sklearn.metrics import confusion_matrix, roc_curve, f1_score, precision_recall_curve, precision_score
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
@@ -154,12 +154,12 @@ cm = confusion_matrix(label_new, pred_new)
 sns.heatmap(cm, annot=True, fmt='g', xticklabels=['Autism', 'Control'], yticklabels=['Autism', 'Control'])
 plt.ylabel('Prediction', fontsize=13)
 plt.xlabel('Actual', fontsize=13)
-plt.title("Confusion Matrix for Feedforward network", fontsize=17)
+#plt.title("Confusion Matrix for Feedforward network", fontsize=17)
 plt.show()
 
 fpr, tpr, _ = roc_curve(label_new, prob_new)
 plt.title(f"ROC curve for feed forward network")
-plt.plot(fpr, tpr, label=f'ROC Curve (AUC = {"{:.2f}".format(metrics.roc_auc_score(label_new, pred_new))})')
+plt.plot(fpr, tpr, label=f'ROC Curve (AUC = {"{:.2f}".format(metrics.roc_auc_score(label_new, prob_new))})')
 plt.xlabel('False positive rate', fontsize=13)
 plt.ylabel('True positive rate', fontsize=13)
 plt.legend(loc='lower right')
@@ -167,6 +167,7 @@ plt.show()
 
 curve = metrics.auc(fpr, tpr)
 print(f"AUC score is: {curve}")
+print(f"Precision score is: {precision_score(label_new, pred_new)}")
 print(f"F1 score is: {f1_score(label_new, pred_new)}")
 
 precision_sc, recall, thresholds = precision_recall_curve(label_new, prob_new)
