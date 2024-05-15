@@ -17,7 +17,7 @@ from sklearn import svm
 
 
 data1 = pd.read_csv("gxp_dataset.csv")
-data = pd.read_csv("lasso_dataset.csv")
+data = pd.read_csv("lasso_big_dataset.csv")
 temp = pd.DataFrame(data1['label'].to_list(), columns=['labels'])
 
 # data1.drop(['label', 'Sample_ID'], axis=1, inplace=True)
@@ -160,8 +160,6 @@ fig1 = plt.figure()
 
 ## implementation with new stratified k fold
 for i, (train_index, test_index) in enumerate(CV.split(data, temp)):
-   print(train_index)
-   print(test_index)
    x_train_fold, x_test_fold = data.iloc[train_index, :], data.iloc[test_index, :]
    y_train_fold, y_test_fold = temp.iloc[train_index], temp.iloc[test_index]
    sc = StandardScaler()
@@ -206,24 +204,24 @@ for i, (train_index, test_index) in enumerate(CV.split(data, temp)):
    # precision_sc, recall, thresholds = precision_recall_curve(actual, preds_prob)
    # auc_score = metrics.auc(recall, precision_sc)
    # plt.figure(figsize=(8, 6))
-   # plt.plot(recall, precision_sc, label=f'Precision-Recall Curve {i} (AUC = {auc_score:.2f})')
+   # plt.plot(recall, precision_sc, label=f'Precision-Recall Curve (AUC = {auc_score:.2f})')
    # plt.xlabel('Recall')
    # plt.ylabel('Precision')
    # plt.title('Precision-Recall Curve')
    # plt.legend()
    # plt.show()
-
+   #
    # fig2 = plt.figure()
    # cm = confusion_matrix(y_test_temp, pred_lr)
    # sns.heatmap(cm, annot=True, fmt='g', xticklabels=['Autism', 'Control'], yticklabels=['Autism', 'Control'])
    # plt.ylabel('Prediction', fontsize=13)
    # plt.xlabel('Actual', fontsize=13)
-   # plt.title(f"Confusion Matrix for Logistic regression {i}", fontsize=17)
+   # plt.title(f"Confusion Matrix for Logistic regression", fontsize=17)
    # plt.show()
    #
    # fpr, tpr, _ = metrics.roc_curve(y_test_temp, pred_prob_lr)
    # plt.title(f"ROC curve for Logistic regression")
-   # plt.plot(fpr, tpr, label=f'ROC Curve {i}(AUC = {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_lr))})')
+   # plt.plot(fpr, tpr, label=f'ROC Curve (AUC = {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_lr))})')
    # plt.xlabel('False positive rate', fontsize=13)
    # plt.ylabel('True positive rate', fontsize=13)
    # plt.legend(loc='lower right')
@@ -290,7 +288,7 @@ plt.show()
 dict_lr = {'AUC':auc_list_lr, 'Sensitivity':sensit_lr, 'Specificity': specif_lr, 'PPV':ppv_list_lr, 'NPV':npv_list_lr, 'Accuracy':accu_lr, 'Precision':prec_lr, 'F1':f1_lr}
 # dict_rf = {'AUC':auc_list_rf, 'Sensitivity':sensit_rf, 'Specificity': specif_rf, 'PPV':ppv_list_rf, 'NPV':npv_list_rf, 'Accuracy':accu_rf, 'Precision':prec_rf, 'F1':f1_rf}
 # dict_sv = {'AUC':auc_list_sv, 'Sensitivity':sensit_sv, 'Specificity': specif_sv, 'PPV':ppv_list_sv, 'NPV':npv_list_sv, 'Accuracy':accu_sv, 'Precision':prec_sv, 'F1':f1_sv}
-
+#
 
 # df_xg = pd.DataFrame(dict_xg)
 df_lr = pd.DataFrame(dict_lr)
@@ -348,17 +346,17 @@ print(df_std)
 # plt.legend()
 # plt.show()
 
-fig2 = plt.figure()
-cm = confusion_matrix(y_test_temp, pred_lr)
-sns.heatmap(cm, annot=True, fmt='g', xticklabels=['Autism', 'Control'], yticklabels=['Autism', 'Control'])
-plt.ylabel('Prediction', fontsize=13)
-plt.xlabel('Actual', fontsize=13)
-plt.title("Confusion Matrix for Logistic regression", fontsize=17)
-plt.show()
+# fig2 = plt.figure()
+# cm = confusion_matrix(y_test_temp, pred_lr)
+# sns.heatmap(cm, annot=True, fmt='g', xticklabels=['Autism', 'Control'], yticklabels=['Autism', 'Control'])
+# plt.ylabel('Prediction', fontsize=13)
+# plt.xlabel('Actual', fontsize=13)
+# plt.title("Confusion Matrix for Logistic regression", fontsize=17)
+# plt.show()
 
-fig2.savefig('Confusion_matrix.png', bbox_inches='tight')
-
-##Machine heavy code below ------ add comment after running ------
+# fig2.savefig('Confusion_matrix.png', bbox_inches='tight')
+#
+# ##Machine heavy code below ------ add comment after running ------
 explainer = shap.KernelExplainer(model_lr.predict, X_train, feature_names=data.columns)
 shap_values = explainer(X_test)
 fig3 = plt.figure()
