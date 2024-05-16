@@ -10,6 +10,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.decomposition import PCA
 import shap
 import numpy as np
 from sklearn.linear_model import Lasso
@@ -19,6 +20,35 @@ from sklearn import svm
 data1 = pd.read_csv("gxp_dataset.csv")
 data = pd.read_csv("lasso_big_dataset.csv")
 temp = pd.DataFrame(data1['label'].to_list(), columns=['labels'])
+
+#### PCA
+
+# val = "gxp_dataset.csv"
+# data1 = pd.read_csv(val)
+# final=data1
+# dim=30
+# temp = pd.DataFrame(data1['label'].to_list(), columns=['labels'])
+# final.drop(['label','Sample_ID'], axis=1, inplace=True)
+# x = data1.loc[:, data1.columns].values
+# x = StandardScaler().fit_transform(x) # normalizing the features
+# np.mean(x),np.std(x)
+# feat_cols = ['feature'+str(i) for i in range(x.shape[1])]
+# normalised = pd.DataFrame(x,columns=feat_cols)
+# normalised.tail()
+# pca = PCA(n_components=dim)
+# principalComponents = pca.fit_transform(x)
+# cols = ['PC'+str(i) for i in range(dim)]
+# principal_Df = pd.DataFrame(data = principalComponents, columns = cols)
+# principal_Df.head()
+# data=principal_Df
+# print('Explained variation per principal component: {}'.format(pca.explained_variance_ratio_))
+# calc = pca.explained_variance_ratio_
+# print(calc.sum())
+
+
+
+### LASSO code
+
 
 # data1.drop(['label', 'Sample_ID'], axis=1, inplace=True)
 # names = data1.columns
@@ -47,6 +77,10 @@ temp = pd.DataFrame(data1['label'].to_list(), columns=['labels'])
 # df_new = data1[feature_subset]
 #
 # df_new.to_csv("lasso_big_dataset.csv", index=False)
+
+
+
+
 
 def sensitivity(pred, y_test):
    tp = 0
@@ -282,7 +316,7 @@ for i, (train_index, test_index) in enumerate(CV.split(data, temp)):
    # f1_sv.append(float("{:.2f}".format(f1(y_test_temp, pred_sv))))
 
 
-plt.show()
+#plt.show()
 #fig1.savefig('ROC_curve.png', bbox_inches='tight')
 # dict_xg = {'AUC':auc_list_xg, 'Sensitivity':sensit_xg, 'Specificity': specif_xg, 'PPV':ppv_list_xg, 'NPV':npv_list_xg, 'Accuracy':accu_xg, 'Precision':prec_xg, 'F1':f1_xg}
 dict_lr = {'AUC':auc_list_lr, 'Sensitivity':sensit_lr, 'Specificity': specif_lr, 'PPV':ppv_list_lr, 'NPV':npv_list_lr, 'Accuracy':accu_lr, 'Precision':prec_lr, 'F1':f1_lr}
@@ -357,23 +391,23 @@ print(df_std)
 # fig2.savefig('Confusion_matrix.png', bbox_inches='tight')
 #
 # ##Machine heavy code below ------ add comment after running ------
-explainer = shap.KernelExplainer(model_lr.predict, X_train, feature_names=data.columns)
-shap_values = explainer(X_test)
-fig3 = plt.figure()
-shap.plots.beeswarm(shap_values)
-plt.show()
-#fig3.savefig('beeswarm_plot.png', bbox_inches='tight')
-fig4 = plt.figure()
-shap.summary_plot(shap_values, X_test)
-plt.show()
-#fig4.savefig('Summary_plot.png', bbox_inches='tight')
-fig5 = plt.figure()
-shap.plots.heatmap(shap_values, max_display=12)
-plt.show()
-#fig5.savefig('Heatmap.png', bbox_inches='tight')
-fig6 = plt.figure()
-shap.plots.waterfall(shap_values[0])
-plt.show()
+# explainer = shap.KernelExplainer(model_lr.predict, X_train, feature_names=data.columns)
+# shap_values = explainer(X_test)
+# fig3 = plt.figure()
+# shap.plots.beeswarm(shap_values)
+# plt.show()
+# #fig3.savefig('beeswarm_plot.png', bbox_inches='tight')
+# fig4 = plt.figure()
+# shap.summary_plot(shap_values, X_test)
+# plt.show()
+# #fig4.savefig('Summary_plot.png', bbox_inches='tight')
+# fig5 = plt.figure()
+# shap.plots.heatmap(shap_values, max_display=12)
+# plt.show()
+# #fig5.savefig('Heatmap.png', bbox_inches='tight')
+# fig6 = plt.figure()
+# shap.plots.waterfall(shap_values[0])
+# plt.show()
 #fig6.savefig('Waterfall_plot.png', bbox_inches='tight')
 # plt7 = plt.figure()
 # precision, recall, thresholds = precision_recall_curve(actual, preds_prob)

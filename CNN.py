@@ -5,39 +5,31 @@ import torch.optim as optim
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
+from sklearn.metrics import f1_score, roc_curve, auc, precision_score, confusion_matrix, accuracy_score
 from sklearn.linear_model import Lasso
 from torch import nn
 import statistics
 import numpy as np
 import torch.nn.functional as F
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 if torch.cuda.is_available():
     device = "cuda:0"
 else:
     device = "cpu"
-val = "final_data.csv"
-data = pd.read_csv(val)
-print(data)
-temp = []
-for i in range(len(data['A/C'])):
-    if data['A/C'][i] == 'A':
-        temp.append(1)
-    else:
-        temp.append(0)
-data.drop('A/C', axis=1, inplace=True)
-if val != "sample.csv":
-    data.drop('Sample_ID', axis=1, inplace=True)
-# temp = pd.DataFrame(temp, columns=['labels'])
 
-final = pd.read_csv("lasso_dataset.csv")
+data1 = pd.read_csv("gxp_dataset.csv")
+temp = pd.DataFrame(data1['label'].to_list(), columns=['labels'])
+final = pd.read_csv("lasso_big_dataset.csv")
 final = final[:-7]
 temp = temp[:-7]
 
 vals = []
-for i in range(10):
+for i in range(1):
     temp = pd.DataFrame(temp, columns=['labels'])
-    X_train, X_test, y_train, y_test = train_test_split(final, temp, test_size=0.3, shuffle=True)
+    X_train, X_test, y_train, y_test = train_test_split(final, temp, test_size=0.3, shuffle=True, random_state=42)
     sc = StandardScaler()
     X_train = sc.fit_transform(X_train)
     X_test = sc.transform(X_test)
@@ -65,8 +57,8 @@ for i in range(10):
             #  self.fc2 = nn.Linear(128, 300)
             #  self.fc3 = nn.Linear(300, 128)
             #  self.fc4 = nn.Linear(128, 60)
-            self.fc5 = nn.Linear(12, 6)
-            self.fc6 = nn.Linear(6, 2)
+            self.fc5 = nn.Linear(53, 25)
+            self.fc6 = nn.Linear(25, 2)
             self.dropout = nn.Dropout(0.8)
 
         def forward(self, x):
@@ -88,47 +80,54 @@ for i in range(10):
 
     model = CNN()
     model.to(device)
-    loss_val = []
-    epochs = 200
-    running_loss = []
-    optimizer = optim.Adam(params=model.parameters(), lr=0.0001)
-    loss_fn = nn.CrossEntropyLoss()
-    model.train()
-    for i in range(epochs):
-        for data in tqdm(train_loader):
-            batch = tuple(t.to(device) for t in data)
-            values, labels = batch
-            output = model(values.float())
-            print(f"Output: {output.shape}")
-            print(f"Output_maxed:{torch.argmax(output, dim=1)}")
-            # labels = labels.view(-1)
-            print(f"Labels: {labels.shape}")
-            labels = torch.squeeze(labels)
-            loss = loss_fn(output, labels)
-            # loss.requires_grad=True
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-            running_loss.append(loss.item())
-            # print(f"Loss is :{loss.item()}")
-        print(f"Epoch {i}")
-        total = 0
-        for i in range(len(running_loss)): total += running_loss[i]
-        loss_val.append(total / len(running_loss))
-        print(f"Training Loss for this epoch is: {total / len(running_loss)}")
+    # loss_val = []
+    # epochs = 200
+    # running_loss = []
+    # optimizer = optim.Adam(params=model.parameters(), lr=0.0001)
+    # loss_fn = nn.CrossEntropyLoss()
+    # model.train()
+    # for i in range(epochs):
+    #     for data in tqdm(train_loader):
+    #         batch = tuple(t.to(device) for t in data)
+    #         values, labels = batch
+    #         output = model(values.float())
+    #         print(f"Output: {output.shape}")
+    #         print(f"Output_maxed:{torch.argmax(output, dim=1)}")
+    #         # labels = labels.view(-1)
+    #         print(f"Labels: {labels.shape}")
+    #         labels = torch.squeeze(labels)
+    #         loss = loss_fn(output, labels)
+    #         # loss.requires_grad=True
+    #         loss.backward()
+    #         optimizer.step()
+    #         optimizer.zero_grad()
+    #         running_loss.append(loss.item())
+    #         # print(f"Loss is :{loss.item()}")
+    #     print(f"Epoch {i}")
+    #     total = 0
+    #     for i in range(len(running_loss)): total += running_loss[i]
+    #     loss_val.append(total / len(running_loss))
+    #     print(f"Training Loss for this epoch is: {total / len(running_loss)}")
+    #
+    # PATH = "model_CNN.pth"
+    # torch.save(model.state_dict(), PATH)
 
+    model.load_state_dict(torch.load('model_CNN.pth'))
     model.eval()
     correct = 0
     total = 0
     pred = []
     label = []
+    prob=[]
     for data in tqdm(test_loader):
         batch = tuple(t.to(device) for t in data)
         values, labels = batch
         output = model(values.float())
+        probabilities = F.softmax(output, dim=1)[:, 1]
         predicted = torch.argmax(output, dim=1)
         print(f"Predicted {predicted.shape}")
         print(f"Labels {labels.shape}")
+        prob.append(probabilities.cpu())
         pred.append(predicted)
         label.append(labels)
         total += labels.size(0)
@@ -153,10 +152,27 @@ for i in range(10):
     for j in range(len(var_new)):
         for k in range(len(var[j])):
             label_new.append(var_new[j][0])
-    from sklearn.metrics import confusion_matrix, precision_score, accuracy_score
+    var = []
+    for i in range(len(prob)):
+        var.append(prob[i].tolist())
+    prob_new = []
+    for j in range(len(var)):
+        for k in range(len(var[j])):
+            prob_new.append(var[j][k])
 
     print(confusion_matrix(label_new, pred_new))
     print(f"Accuracy is: {accuracy_score(label_new, pred_new)}")
     vals.append(accuracy_score(label_new, pred_new))
 
+    cm = confusion_matrix(label_new, pred_new)
+    sns.heatmap(cm, annot=True, fmt='g', xticklabels=['Autism', 'Control'], yticklabels=['Autism', 'Control'])
+    plt.ylabel('Prediction', fontsize=13)
+    plt.xlabel('Actual', fontsize=13)
+    # plt.title("Confusion Matrix for Feedforward network", fontsize=17)
+    plt.show()
+    fpr, tpr, _ = roc_curve(label_new, prob_new)
+    curve = auc(fpr, tpr)
+    print(f"AUC score is: {curve}")
+    print(f"Precision score is: {precision_score(label_new, pred_new)}")
+    print(f"F1 score is: {f1_score(label_new, pred_new)}")
 print(vals)
