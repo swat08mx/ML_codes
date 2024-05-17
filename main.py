@@ -10,31 +10,33 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import KFold, StratifiedKFold
-from sklearn.decomposition import PCA
 import shap
 import numpy as np
 from sklearn.linear_model import Lasso
 from sklearn import svm
 
 
-data1 = pd.read_csv("gxp_dataset.csv")
-data = pd.read_csv("lasso_big_dataset.csv")
-temp = pd.DataFrame(data1['label'].to_list(), columns=['labels'])
+# data1 = pd.read_csv("gxp_dataset.csv")
+# data = pd.read_csv("lasso_big_dataset.csv")
+# temp = pd.DataFrame(data1['label'].to_list(), columns=['labels'])
 
 #### PCA
-
+# import pandas as pd
 # val = "gxp_dataset.csv"
 # data1 = pd.read_csv(val)
 # final=data1
 # dim=30
 # temp = pd.DataFrame(data1['label'].to_list(), columns=['labels'])
 # final.drop(['label','Sample_ID'], axis=1, inplace=True)
+# from sklearn.preprocessing import StandardScaler
 # x = data1.loc[:, data1.columns].values
 # x = StandardScaler().fit_transform(x) # normalizing the features
+# import numpy as np
 # np.mean(x),np.std(x)
 # feat_cols = ['feature'+str(i) for i in range(x.shape[1])]
 # normalised = pd.DataFrame(x,columns=feat_cols)
 # normalised.tail()
+# from sklearn.decomposition import PCA
 # pca = PCA(n_components=dim)
 # principalComponents = pca.fit_transform(x)
 # cols = ['PC'+str(i) for i in range(dim)]
@@ -203,24 +205,24 @@ for i, (train_index, test_index) in enumerate(CV.split(data, temp)):
    y_test = y_test_fold
    y_test_temp = y_test['labels'].to_list()
 
-   # print("XGBoost")
-   # k='XGBoost'
-   # model_xg = XGBClassifier(learning_rate=0.05, device='gpu', objective='binary:logistic')
-   # model_xg.fit(X_train, y_train.values.ravel())
-   # pred_prob_xg = model_xg.predict_proba(X_test)[:, 1]
-   # pred_xg = model_xg.predict(X_test)
-   # fpr, tpr, _ = metrics.roc_curve(y_test_temp, pred_prob_xg)
-   # plt.title(f"ROC curve")
-   # plt.plot(fpr, tpr, label=f'{k}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_xg))}')
-   # plt.legend()
-   # sensit_xg.append(float("{:.2f}".format(sensitivity(pred_xg, y_test_temp))))
-   # specif_xg.append(float("{:.2f}".format(specificity(pred_xg, y_test_temp))))
-   # accu_xg.append(float("{:.2f}".format(accuracy(y_test_temp, pred_xg))))
-   # prec_xg.append(float("{:.2f}".format(precision(y_test_temp, pred_xg))))
-   # auc_list_xg.append(float("{:.2f}".format(auc(y_test, pred_prob_xg))))
-   # ppv_list_xg.append(float("{:.2f}".format(ppv(pred_xg, y_test_temp))))
-   # npv_list_xg.append(float("{:.2f}".format(npv(pred_xg, y_test_temp))))
-   # f1_xg.append(float("{:.2f}".format(f1(y_test_temp, pred_xg))))
+   print("XGBoost")
+   k='XGBoost'
+   model_xg = XGBClassifier(learning_rate=0.05, device='gpu', objective='binary:logistic')
+   model_xg.fit(X_train, y_train.values.ravel())
+   pred_prob_xg = model_xg.predict_proba(X_test)[:, 1]
+   pred_xg = model_xg.predict(X_test)
+   fpr, tpr, _ = metrics.roc_curve(y_test_temp, pred_prob_xg)
+   plt.title(f"ROC curve")
+   plt.plot(fpr, tpr, label=f'{k}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_xg))}')
+   plt.legend()
+   sensit_xg.append(float("{:.2f}".format(sensitivity(pred_xg, y_test_temp))))
+   specif_xg.append(float("{:.2f}".format(specificity(pred_xg, y_test_temp))))
+   accu_xg.append(float("{:.2f}".format(accuracy(y_test_temp, pred_xg))))
+   prec_xg.append(float("{:.2f}".format(precision(y_test_temp, pred_xg))))
+   auc_list_xg.append(float("{:.2f}".format(auc(y_test, pred_prob_xg))))
+   ppv_list_xg.append(float("{:.2f}".format(ppv(pred_xg, y_test_temp))))
+   npv_list_xg.append(float("{:.2f}".format(npv(pred_xg, y_test_temp))))
+   f1_xg.append(float("{:.2f}".format(f1(y_test_temp, pred_xg))))
 
    print("Logistic Regression")
    #k='Logistic Regression'
@@ -270,101 +272,101 @@ for i, (train_index, test_index) in enumerate(CV.split(data, temp)):
    npv_list_lr.append(float("{:.2f}".format(npv(pred_lr, y_test_temp))))
    f1_lr.append(float("{:.2f}".format(f1(y_test_temp, pred_lr))))
 
-   # print("Random Forest")
-   # k='Random Forest'
-   # model_rf = RandomForestClassifier(n_estimators=2000)
-   # model_rf.fit(X_train, y_train.values.ravel())
-   # pred_prob_rf = model_rf.predict_proba(X_test)[:, 1]
-   # pred_rf = model_rf.predict(X_test)
-   # fpr, tpr, _ = metrics.roc_curve(y_test_temp, pred_prob_rf)
-   # plt.title(f"ROC curve")
-   # plt.plot(fpr, tpr, label=f'{k}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_rf))}')
-   # plt.legend()
-   # sensit_rf.append(float("{:.2f}".format(sensitivity(pred_rf, y_test_temp))))
-   # specif_rf.append(float("{:.2f}".format(specificity(pred_rf, y_test_temp))))
-   # accu_rf.append(float("{:.2f}".format(accuracy(y_test_temp, pred_rf))))
-   # prec_rf.append(float("{:.2f}".format(precision(y_test_temp, pred_rf))))
-   # auc_list_rf.append(float("{:.2f}".format(auc(y_test_temp, pred_prob_rf))))
-   # ppv_list_rf.append(float("{:.2f}".format(ppv(pred_rf, y_test_temp))))
-   # npv_list_rf.append(float("{:.2f}".format(npv(pred_rf, y_test_temp))))
-   # f1_rf.append(float("{:.2f}".format(f1(y_test_temp, pred_rf))))
-   #
-   # print("Support Vector Machine")
-   # k='SVM'
-   # model_sv = svm.SVC(probability=True, kernel='linear')
-   # model_sv.fit(X_train, y_train.values.ravel())
-   # pred_prob_sv = model_sv.predict_proba(X_test)[:, 1]
-   # pred_sv = model_sv.predict(X_test)
-   # for values in pred_prob_sv:
-   #     preds_prob.append(values)
-   # for values in pred_sv:
-   #     preds.append(values)
-   # for values in y_test_temp:
-   #     actual.append(values)
-   # fpr, tpr, _ = metrics.roc_curve(y_test_temp, pred_prob_sv)
-   # plt.title(f"ROC curve")
-   # plt.plot(fpr, tpr, label=f'{k}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_sv))}')
-   # plt.legend()
-   # plt.plot()
-   # sensit_sv.append(float("{:.2f}".format(sensitivity(pred_sv, y_test_temp))))
-   # specif_sv.append(float("{:.2f}".format(specificity(pred_sv, y_test_temp))))
-   # accu_sv.append(float("{:.2f}".format(accuracy(y_test_temp, pred_sv))))
-   # prec_sv.append(float("{:.2f}".format(precision(y_test_temp, pred_sv))))
-   # auc_list_sv.append(float("{:.2f}".format(auc(y_test_temp, pred_prob_sv))))
-   # ppv_list_sv.append(float("{:.2f}".format(ppv(pred_sv, y_test_temp))))
-   # npv_list_sv.append(float("{:.2f}".format(npv(pred_sv, y_test_temp))))
-   # f1_sv.append(float("{:.2f}".format(f1(y_test_temp, pred_sv))))
+   print("Random Forest")
+   k='Random Forest'
+   model_rf = RandomForestClassifier(n_estimators=2000)
+   model_rf.fit(X_train, y_train.values.ravel())
+   pred_prob_rf = model_rf.predict_proba(X_test)[:, 1]
+   pred_rf = model_rf.predict(X_test)
+   fpr, tpr, _ = metrics.roc_curve(y_test_temp, pred_prob_rf)
+   plt.title(f"ROC curve")
+   plt.plot(fpr, tpr, label=f'{k}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_rf))}')
+   plt.legend()
+   sensit_rf.append(float("{:.2f}".format(sensitivity(pred_rf, y_test_temp))))
+   specif_rf.append(float("{:.2f}".format(specificity(pred_rf, y_test_temp))))
+   accu_rf.append(float("{:.2f}".format(accuracy(y_test_temp, pred_rf))))
+   prec_rf.append(float("{:.2f}".format(precision(y_test_temp, pred_rf))))
+   auc_list_rf.append(float("{:.2f}".format(auc(y_test_temp, pred_prob_rf))))
+   ppv_list_rf.append(float("{:.2f}".format(ppv(pred_rf, y_test_temp))))
+   npv_list_rf.append(float("{:.2f}".format(npv(pred_rf, y_test_temp))))
+   f1_rf.append(float("{:.2f}".format(f1(y_test_temp, pred_rf))))
+
+   print("Support Vector Machine")
+   k='SVM'
+   model_sv = svm.SVC(probability=True, kernel='linear')
+   model_sv.fit(X_train, y_train.values.ravel())
+   pred_prob_sv = model_sv.predict_proba(X_test)[:, 1]
+   pred_sv = model_sv.predict(X_test)
+   for values in pred_prob_sv:
+       preds_prob.append(values)
+   for values in pred_sv:
+       preds.append(values)
+   for values in y_test_temp:
+       actual.append(values)
+   fpr, tpr, _ = metrics.roc_curve(y_test_temp, pred_prob_sv)
+   plt.title(f"ROC curve")
+   plt.plot(fpr, tpr, label=f'{k}, {"{:.2f}".format(metrics.roc_auc_score(y_test_temp, pred_prob_sv))}')
+   plt.legend()
+   plt.plot()
+   sensit_sv.append(float("{:.2f}".format(sensitivity(pred_sv, y_test_temp))))
+   specif_sv.append(float("{:.2f}".format(specificity(pred_sv, y_test_temp))))
+   accu_sv.append(float("{:.2f}".format(accuracy(y_test_temp, pred_sv))))
+   prec_sv.append(float("{:.2f}".format(precision(y_test_temp, pred_sv))))
+   auc_list_sv.append(float("{:.2f}".format(auc(y_test_temp, pred_prob_sv))))
+   ppv_list_sv.append(float("{:.2f}".format(ppv(pred_sv, y_test_temp))))
+   npv_list_sv.append(float("{:.2f}".format(npv(pred_sv, y_test_temp))))
+   f1_sv.append(float("{:.2f}".format(f1(y_test_temp, pred_sv))))
 
 
-#plt.show()
-#fig1.savefig('ROC_curve.png', bbox_inches='tight')
-# dict_xg = {'AUC':auc_list_xg, 'Sensitivity':sensit_xg, 'Specificity': specif_xg, 'PPV':ppv_list_xg, 'NPV':npv_list_xg, 'Accuracy':accu_xg, 'Precision':prec_xg, 'F1':f1_xg}
+plt.show()
+# fig1.savefig('ROC_curve.png', bbox_inches='tight')
+dict_xg = {'AUC':auc_list_xg, 'Sensitivity':sensit_xg, 'Specificity': specif_xg, 'PPV':ppv_list_xg, 'NPV':npv_list_xg, 'Accuracy':accu_xg, 'Precision':prec_xg, 'F1':f1_xg}
 dict_lr = {'AUC':auc_list_lr, 'Sensitivity':sensit_lr, 'Specificity': specif_lr, 'PPV':ppv_list_lr, 'NPV':npv_list_lr, 'Accuracy':accu_lr, 'Precision':prec_lr, 'F1':f1_lr}
-# dict_rf = {'AUC':auc_list_rf, 'Sensitivity':sensit_rf, 'Specificity': specif_rf, 'PPV':ppv_list_rf, 'NPV':npv_list_rf, 'Accuracy':accu_rf, 'Precision':prec_rf, 'F1':f1_rf}
-# dict_sv = {'AUC':auc_list_sv, 'Sensitivity':sensit_sv, 'Specificity': specif_sv, 'PPV':ppv_list_sv, 'NPV':npv_list_sv, 'Accuracy':accu_sv, 'Precision':prec_sv, 'F1':f1_sv}
-#
+dict_rf = {'AUC':auc_list_rf, 'Sensitivity':sensit_rf, 'Specificity': specif_rf, 'PPV':ppv_list_rf, 'NPV':npv_list_rf, 'Accuracy':accu_rf, 'Precision':prec_rf, 'F1':f1_rf}
+dict_sv = {'AUC':auc_list_sv, 'Sensitivity':sensit_sv, 'Specificity': specif_sv, 'PPV':ppv_list_sv, 'NPV':npv_list_sv, 'Accuracy':accu_sv, 'Precision':prec_sv, 'F1':f1_sv}
 
-# df_xg = pd.DataFrame(dict_xg)
+
+df_xg = pd.DataFrame(dict_xg)
 df_lr = pd.DataFrame(dict_lr)
-# df_rf = pd.DataFrame(dict_rf)
-# df_sv = pd.DataFrame(dict_sv)
-# print(df_xg)
+df_rf = pd.DataFrame(dict_rf)
+df_sv = pd.DataFrame(dict_sv)
+print(df_xg)
 print(df_lr)
-# print(df_rf)
-# print(df_sv)
+print(df_rf)
+print(df_sv)
 
-# lists_xg = df_xg.columns
-# xg_mean=[]
-# xg_std=[]
-# for items in lists_xg:
-#     xg_mean.append(df_xg[items].mean(axis=0))
-#     xg_std.append(df_xg[items].std(axis=0))
+lists_xg = df_xg.columns
+xg_mean=[]
+xg_std=[]
+for items in lists_xg:
+    xg_mean.append(df_xg[items].mean(axis=0))
+    xg_std.append(df_xg[items].std(axis=0))
 lists_lr = df_lr.columns
 lr_mean=[]
 lr_std=[]
 for items in lists_lr:
    lr_mean.append(df_lr[items].mean(axis=0))
    lr_std.append(df_lr[items].std(axis=0))
-# lists_rf = df_rf.columns
-# rf_mean=[]
-# rf_std=[]
-# for items in lists_rf:
-#     rf_mean.append(df_rf[items].mean(axis=0))
-#     rf_std.append(df_rf[items].std(axis=0))
-# lists_sv = df_sv.columns
-# sv_mean=[]
-# sv_std=[]
-# for items in lists_sv:
-#     sv_mean.append(df_sv[items].mean(axis=0))
-#     sv_std.append(df_sv[items].std(axis=0))
+lists_rf = df_rf.columns
+rf_mean=[]
+rf_std=[]
+for items in lists_rf:
+    rf_mean.append(df_rf[items].mean(axis=0))
+    rf_std.append(df_rf[items].std(axis=0))
+lists_sv = df_sv.columns
+sv_mean=[]
+sv_std=[]
+for items in lists_sv:
+    sv_mean.append(df_sv[items].mean(axis=0))
+    sv_std.append(df_sv[items].std(axis=0))
 
 
-# dict_mean = {'XGBoost':xg_mean, 'Logistic Regression':lr_mean, 'Random Forest': rf_mean, 'SVM':sv_mean}
-# dict_std = {'XGBoost':xg_std, 'Logistic Regression':lr_std, 'Random Forest': rf_std, 'SVM':sv_std}
+dict_mean = {'XGBoost':xg_mean, 'Logistic Regression':lr_mean, 'Random Forest': rf_mean, 'SVM':sv_mean}
+dict_std = {'XGBoost':xg_std, 'Logistic Regression':lr_std, 'Random Forest': rf_std, 'SVM':sv_std}
 
 
-dict_mean = {'Logistic Regression':lr_mean}
-dict_std = {'Logistic Regression':lr_std}
+# dict_mean = {'Logistic Regression':lr_mean}
+# dict_std = {'Logistic Regression':lr_std}
 
 df_mean = pd.DataFrame(dict_mean)
 df_std = pd.DataFrame(dict_std)
@@ -380,13 +382,13 @@ print(df_std)
 # plt.legend()
 # plt.show()
 
-# fig2 = plt.figure()
-# cm = confusion_matrix(y_test_temp, pred_lr)
-# sns.heatmap(cm, annot=True, fmt='g', xticklabels=['Autism', 'Control'], yticklabels=['Autism', 'Control'])
-# plt.ylabel('Prediction', fontsize=13)
-# plt.xlabel('Actual', fontsize=13)
-# plt.title("Confusion Matrix for Logistic regression", fontsize=17)
-# plt.show()
+fig2 = plt.figure()
+cm = confusion_matrix(y_test_temp, pred_lr)
+sns.heatmap(cm, annot=True, fmt='g', xticklabels=['Autism', 'Control'], yticklabels=['Autism', 'Control'])
+plt.ylabel('Prediction', fontsize=13)
+plt.xlabel('Actual', fontsize=13)
+plt.title("Confusion Matrix for Logistic regression", fontsize=17)
+plt.show()
 
 # fig2.savefig('Confusion_matrix.png', bbox_inches='tight')
 #
