@@ -16,9 +16,9 @@ from sklearn.linear_model import Lasso
 from sklearn import svm
 
 
-# data1 = pd.read_csv("gxp_dataset.csv")
-# data = pd.read_csv("lasso_big_dataset.csv")
-# temp = pd.DataFrame(data1['label'].to_list(), columns=['labels'])
+data1 = pd.read_csv("gxp_dataset.csv")
+data = pd.read_csv("lasso_big_dataset.csv")
+temp = pd.DataFrame(data1['label'].to_list(), columns=['labels'])
 
 #### PCA
 # import pandas as pd
