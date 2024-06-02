@@ -92,6 +92,7 @@ model.to(device)
 #     loss_val.append(total/len(running_loss))
 #     print(f"Loss: {total/len(running_loss)}")
 
+
 # PATH="model1.pth"
 # torch.save(model.state_dict(), PATH)
 
@@ -101,6 +102,7 @@ correct = 0
 total = 0
 pred=[]
 label=[]
+loss_test=[]
 prob=[]
 for data in tqdm(test_loader):
     batch = tuple(t.to(device) for t in data)
@@ -108,17 +110,27 @@ for data in tqdm(test_loader):
     output = model(values.float())
     probabilities = F.softmax(output, dim=1)[:, 1]
     predicted = torch.argmax(output, dim=1)
-    #print(output)
+    # print(output)
+    # print(predicted)
+    # print(labels[0])
+    # loss = loss_fn(predicted.float(), labels[0].float())
     prob.append(probabilities.cpu())
     pred.append(predicted.cpu())
     label.append(labels.cpu())
     total += labels.size(0)
     correct += (predicted == labels).sum().item()
-
+    # loss_test.append(loss)
 accuracy = (correct/total)*100
 print(f"\nTest Accuracy: {format(accuracy, '.4f')}%\n")
 vals.append(accuracy)
 print(vals)
+
+# fig1=plt.figure()
+# #plt.plot(loss_val)
+# plt.plot(loss_test)
+# plt.show()
+
+
 
 var = []
 for i in range(len(pred)):
@@ -179,3 +191,4 @@ plt.ylabel('Precision')
 plt.title('Precision-Recall Curve for feed forward network')
 plt.legend()
 plt.show()
+
