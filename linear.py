@@ -92,7 +92,6 @@ model.to(device)
 #     loss_val.append(total/len(running_loss))
 #     print(f"Loss: {total/len(running_loss)}")
 
-
 # PATH="model1.pth"
 # torch.save(model.state_dict(), PATH)
 
@@ -130,8 +129,6 @@ print(vals)
 # plt.plot(loss_test)
 # plt.show()
 
-
-
 var = []
 for i in range(len(pred)):
   var.append(pred[i].tolist())
@@ -160,7 +157,6 @@ for j in range(len(var)):
 # shap_values = explainer.shap_values(torch.Tensor(X_test))
 # shap.plots.beeswarm(shap_values)
 # plt.show()
-
 
 cm = confusion_matrix(label_new, pred_new)
 sns.heatmap(cm, annot=True, fmt='g', xticklabels=['Autism', 'Control'], yticklabels=['Autism', 'Control'])
@@ -191,4 +187,3 @@ plt.ylabel('Precision')
 plt.title('Precision-Recall Curve for feed forward network')
 plt.legend()
 plt.show()
-
