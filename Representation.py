@@ -76,3 +76,19 @@ plt.style.use('fivethirtyeight')
 plt.xlabel('Iterations')
 plt.ylabel('Loss')
 plt.plot(loss_list[-100:])
+
+plt.style.use('fivethirtyeight')
+plt.xlabel('Iterations')
+plt.ylabel('Loss')
+plt.plot(loss_list[-40000:])
+
+epoch, image, reconstructed = outputs[0]
+image= image.detach().cpu()
+reconstructed = reconstructed.detach().cpu()
+for i, item in enumerate(image):
+  item = item.reshape(-1, 28, 28)
+  plt.imshow(item[0])
+
+for i, item in enumerate(reconstructed):
+  item = item.reshape(-1, 28, 28)
+  plt.imshow(item[0])
