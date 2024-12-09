@@ -61,7 +61,7 @@ print(f"The model is using the {dev}")
 epochs=40
 outputs=[]
 loss_list=[]
-for epoch in range(epochs):
+for epoch in tqdm(range(epochs)):
     for (image, _) in tqdm(loader):
         image=image.reshape(-1, 28*28).to(dev)
         reconstructed = model(image)
@@ -88,7 +88,9 @@ reconstructed = reconstructed.detach().cpu()
 for i, item in enumerate(image):
   item = item.reshape(-1, 28, 28)
   plt.imshow(item[0])
+  plt.show()
 
 for i, item in enumerate(reconstructed):
   item = item.reshape(-1, 28, 28)
   plt.imshow(item[0])
+  plt.show()
