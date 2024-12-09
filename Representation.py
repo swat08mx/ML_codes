@@ -25,8 +25,8 @@ else:
   dev="cpu"
 
 input_size=784
-hidden_enc=[512, 256, 128, 64]
-hidden_dec=[128, 256, 512, 784]
+hidden_enc=[512, 128]
+hidden_dec=[512, 784]
 class autoenc(nn.Module):
     def __init__(self, hidden_enc, hidden_dec, input_size):
         super().__init__()
@@ -52,16 +52,17 @@ class autoenc(nn.Module):
             if counter == len(self.layers_dec):
                 break
         return x
+
 model=autoenc(hidden_enc, hidden_dec, input_size)
 model.to(dev)
 
 loss_func = nn.MSELoss()
 optimizer=torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-8)
 print(f"The model is using the {dev}")
-epochs=40
+epochs=20
 outputs=[]
 loss_list=[]
-for epoch in tqdm(range(epochs)):
+for epoch in range(epochs):
     for (image, _) in tqdm(loader):
         image=image.reshape(-1, 28*28).to(dev)
         reconstructed = model(image)
@@ -80,7 +81,7 @@ plt.plot(loss_list[-100:])
 plt.style.use('fivethirtyeight')
 plt.xlabel('Iterations')
 plt.ylabel('Loss')
-plt.plot(loss_list[-40000:])
+plt.plot(loss_list)
 
 epoch, image, reconstructed = outputs[0]
 image= image.detach().cpu()
