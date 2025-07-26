@@ -80,34 +80,34 @@ for i in range(1):
 
     model = CNN()
     model.to(device)
-    loss_val = []
-    epochs = 200
-    running_loss = []
-    optimizer = optim.Adam(params=model.parameters(), lr=0.0001)
-    loss_fn = nn.CrossEntropyLoss()
-    model.train()
-    for i in range(epochs):
-        for data in tqdm(train_loader):
-            batch = tuple(t.to(device) for t in data)
-            values, labels = batch
-            output = model(values.float())
-            print(f"Output: {output.shape}")
-            print(f"Output_maxed:{torch.argmax(output, dim=1)}")
-            # labels = labels.view(-1)
-            print(f"Labels: {labels.shape}")
-            labels = torch.squeeze(labels)
-            loss = loss_fn(output, labels)
-            # loss.requires_grad=True
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-            running_loss.append(loss.item())
-            # print(f"Loss is :{loss.item()}")
-        print(f"Epoch {i}")
-        total = 0
-        for i in range(len(running_loss)): total += running_loss[i]
-        loss_val.append(total / len(running_loss))
-        print(f"Training Loss for this epoch is: {total / len(running_loss)}")
+    # loss_val = []
+    # epochs = 200
+    # running_loss = []
+    # optimizer = optim.Adam(params=model.parameters(), lr=0.0001)
+    # loss_fn = nn.CrossEntropyLoss()
+    # model.train()
+    # for i in range(epochs):
+    #     for data in tqdm(train_loader):
+    #         batch = tuple(t.to(device) for t in data)
+    #         values, labels = batch
+    #         output = model(values.float())
+    #         print(f"Output: {output.shape}")
+    #         print(f"Output_maxed:{torch.argmax(output, dim=1)}")
+    #         # labels = labels.view(-1)
+    #         print(f"Labels: {labels.shape}")
+    #         labels = torch.squeeze(labels)
+    #         loss = loss_fn(output, labels)
+    #         # loss.requires_grad=True
+    #         loss.backward()
+    #         optimizer.step()
+    #         optimizer.zero_grad()
+    #         running_loss.append(loss.item())
+    #         # print(f"Loss is :{loss.item()}")
+    #     print(f"Epoch {i}")
+    #     total = 0
+    #     for i in range(len(running_loss)): total += running_loss[i]
+    #     loss_val.append(total / len(running_loss))
+    #     print(f"Training Loss for this epoch is: {total / len(running_loss)}")
     #
     # PATH = "model_CNN.pth"
     # torch.save(model.state_dict(), PATH)
@@ -131,12 +131,12 @@ for i in range(1):
         pred.append(predicted)
         label.append(labels)
         total += labels.size(0)
-        print(len(pred))
-        print(len(label))
-        correct += (predicted == labels).sum().item()
-    accuracy = (correct/total)*100
-    vals.append(accuracy)
-    print(f"\nTest Accuracy: {format(accuracy, '.4f')}%\n")
+    #     print(len(pred))
+    #     print(len(label))
+    #     correct += (predicted == labels).sum().item()
+    # accuracy = (correct/total)*100
+    # vals.append(accuracy)
+    # print(f"\nTest Accuracy: {format(accuracy, '.4f')}%\n")
 
     var = []
     for i in range(len(pred)):
